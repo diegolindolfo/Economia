@@ -1,0 +1,6 @@
+{
+  "name": "Extrato & Finanças",
+  "description": "Gerenciador financeiro zero fricção com importação de extrato CSV Nubank, categorização recursiva em um clique, saldo real/estimado, resumo do dia, gastos por categoria e investimentos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

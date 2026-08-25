@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Fraunces", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+:root {
+  --bg-paper: #EDE8DC;
+  --bg-card: #FAF8F2;
+  --text-ink: #141A15;
+  --text-muted: #555C54;
+  --border-line: #D3CCA;
+}
+
+body {
+  font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #EDE8DC;
+  color: #141A15;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.font-receipt-display {
+  font-family: "Fraunces", Georgia, serif;
+}
+
+.font-receipt-mono {
+  font-family: "IBM Plex Mono", monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Receipt perforation dotted line */
+.receipt-perforation {
+  background-image: radial-gradient(#D6D0BC 2px, transparent 2px);
+  background-size: 8px 8px;
+  background-position: center;
+  height: 4px;
+}
+
+.receipt-perforation-dark {
+  background-image: radial-gradient(#38433A 2px, transparent 2px);
+  background-size: 8px 8px;
+  background-position: center;
+  height: 4px;
+}
+
+/* Sawtooth receipt edge */
+.sawtooth-top {
+  position: relative;
+}
+.sawtooth-top::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background-size: 12px 6px;
+  background-repeat: repeat-x;
+  background-image: linear-gradient(45deg, #FBF9F2 50%, transparent 50%),
+                    linear-gradient(-45deg, #FBF9F2 50%, transparent 50%);
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D6D0BC;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #B8B097;
+}
+
+/* Touch action optimization */
+button, input, select {
+  touch-action: manipulation;
+}
