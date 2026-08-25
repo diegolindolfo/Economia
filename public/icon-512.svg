@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="pwaGrad512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E2620;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#121713;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow512" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="url(#pwaGrad512)" />
+  <rect x="4" y="4" width="504" height="504" rx="108" fill="none" stroke="#2F3B31" stroke-width="4" />
+  
+  <!-- Central Badge -->
+  <g filter="url(#shadow512)">
+    <rect x="96" y="96" width="320" height="320" rx="68" fill="#FAF8F2" />
+  </g>
+  
+  <!-- Stylized Monogram N -->
+  <path d="M165 326 V186 H207 L305 288 V186 H347 V326 H305 L207 224 V326 Z" fill="#161C17" />
+  
+  <!-- Financial Accent Dot -->
+  <circle cx="374" cy="138" r="16" fill="#2E6B4F" />
+</svg>

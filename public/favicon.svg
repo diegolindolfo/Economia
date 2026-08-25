@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E2620;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#121713;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <!-- Background Rounded Tile -->
+  <rect width="128" height="128" rx="28" fill="url(#grad1)" />
+  <rect x="2" y="2" width="124" height="124" rx="26" fill="none" stroke="#344036" stroke-width="2" />
+  
+  <!-- Receipt / Card Badge -->
+  <g filter="url(#shadow)">
+    <rect x="24" y="24" width="80" height="80" rx="18" fill="#FAF8F2" />
+  </g>
+  
+  <!-- Stylized Monogram N with receipt notches -->
+  <path d="M42 82 V46 H53 L75 72 V46 H86 V82 H75 L53 56 V82 Z" fill="#161C17" />
+  
+  <!-- Accent indicator dots -->
+  <circle cx="94" cy="34" r="4" fill="#2E6B4F" />
+</svg>

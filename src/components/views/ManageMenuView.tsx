@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   UploadCloud,
   FileText,
@@ -13,12 +13,22 @@ import {
   Calendar,
   DollarSign,
   Tag,
+  Smartphone,
+  Wifi,
+  Share,
+  PlusSquare,
+  Layers,
 } from 'lucide-react';
 import { CategoryRule, Settings, Transaction, Category } from '../../types';
 import { CATEGORIES, CATEGORY_LIST } from '../../lib/categorization/categories';
 import { formatCurrency, formatDateBR } from '../../lib/format';
 import { CategoryChip } from '../CategoryChip';
 import { SAMPLE_NUBANK_CSV } from '../../data/sampleData';
+import {
+  subscribeToInstallPrompt,
+  promptPWAInstall,
+  isAppInstalled,
+} from '../../serviceWorkerRegistration';
 
 interface ManageMenuViewProps {
   transactions: Transaction[];
@@ -45,6 +55,37 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
 }) => {
   // Tabs inside Menu: 'import' | 'settings' | 'rules' | 'backup'
   const [activeSection, setActiveSection] = useState<'import' | 'settings' | 'rules' | 'backup'>('import');
+
+  // PWA Install state
+  const [canInstallPWA, setCanInstallPWA] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    setIsInstalled(isAppInstalled());
+    const unsubscribe = subscribeToInstallPrompt((canInstall) => {
+      setCanInstallPWA(canInstall);
+    });
+
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    const installed = await promptPWAInstall();
+    if (installed) {
+      setIsInstalled(true);
+      setCanInstallPWA(false);
+    }
+  };
 
   // CSV paste text state
   const [csvText, setCsvText] = useState('');
@@ -197,8 +238,8 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
               : 'text-[#555C54] hover:text-[#141A15] hover:bg-[#EFECE0]'
           }`}
         >
-          <Trash2 size={16} />
-          <span>Dados & Backup</span>
+          <Smartphone size={16} />
+          <span>App & Backup</span>
         </button>
       </div>
 
@@ -445,16 +486,59 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
         </div>
       )}
 
-      {/* SECTION 4: DATA & BACKUP */}
+      {/* SECTION 4: DATA, APP & BACKUP */}
       {activeSection === 'backup' && (
         <div className="bg-[#FAF8F2] border border-[#D8D2C0] rounded-2xl p-4 sm:p-6 shadow-xs space-y-6">
           <div className="pb-3 border-b border-[#EAE4D2]">
             <h2 className="font-receipt-display font-bold text-lg text-[#141A15]">
-              Gerenciamento de Dados & Backup
+              Aplicativo PWA & Gerenciamento de Dados
             </h2>
             <p className="text-xs text-[#555C54] mt-0.5">
-              Todos os seus dados e extratos são armazenados 100% no seu navegador (localStorage) para sua privacidade e segurança.
+              Instale o aplicativo na sua tela de início, acesse offline sem internet e gerencie seus backups.
             </p>
+          </div>
+
+          {/* PWA / App Installation Banner */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#161C17] text-[#FAF8F2] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+            <div className="space-y-1.5 max-w-lg">
+              <div className="flex items-center gap-2">
+                <Smartphone className="text-[#8FB397]" size={20} />
+                <span className="font-receipt-display font-bold text-base text-white">
+                  Instalar no Celular ou Computador (PWA)
+                </span>
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold uppercase ${
+                  isOnline ? 'bg-[#2E6B4F] text-[#FAF8F2]' : 'bg-[#B96A28] text-white'
+                }`}>
+                  {isOnline ? 'Pronto Offline' : 'Modo Offline'}
+                </span>
+              </div>
+              <p className="text-xs text-[#B2BBB4] leading-relaxed">
+                Funciona como um aplicativo nativo rápido, sem ocupar espaço, 100% offline e com ícone na tela de início.
+              </p>
+            </div>
+
+            <div className="w-full sm:w-auto shrink-0">
+              {isInstalled ? (
+                <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2E6B4F]/40 border border-[#2E6B4F] text-xs font-bold text-[#A7D7BC]">
+                  <CheckCircle2 size={16} />
+                  <span>Aplicativo Instalado</span>
+                </div>
+              ) : canInstallPWA ? (
+                <button
+                  type="button"
+                  onClick={handleInstallClick}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#2E6B4F] hover:bg-[#255740] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+                >
+                  <PlusSquare size={16} />
+                  <span>Instalar Aplicativo</span>
+                </button>
+              ) : (
+                <div className="text-[11px] text-[#A2ADA5] bg-[#222A23] p-2.5 rounded-xl border border-[#303B31]">
+                  <span className="font-semibold text-white block mb-0.5">No iPhone / Safari:</span>
+                  Toque em <Share size={12} className="inline mx-1" /> <strong>Compartilhar</strong> e selecione <strong>Adicionar à Tela de Início</strong>.
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -1,6 +1,6 @@
 {
   "name": "Extrato & Finanças",
-  "description": "Gerenciador financeiro zero fricção com importação de extrato CSV Nubank, categorização recursiva em um clique, saldo real/estimado, resumo do dia, gastos por categoria e investimentos.",
+  "description": "PWA 100% offline e pronto para Vercel: gerenciador financeiro zero fricção com importação CSV Nubank, categorização em 1 clique, saldo em conta, resumo diário, investimentos e backup local.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
