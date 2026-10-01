@@ -60,11 +60,15 @@ export default function App() {
     setSettings(savedSettings);
 
     if (savedTxns.length > 0) {
-      // Automatically upgrade heuristic transactions to new categories (delivery, mercado, transporte, etc.)
+      // Automatically upgrade transactions: map legacy alimentacao to delivery/mercado and refresh heuristics
       const upgradedTxns = savedTxns.map((t) => {
+        if ((t.category as string) === 'alimentacao') {
+          const { category, source } = determineCategory(t.merchantKey, t.desc, t.valor, savedRules);
+          return { ...t, category: category === 'alimentacao' ? 'delivery' : category, categorySource: source };
+        }
         if (t.categorySource === 'heuristica') {
           const { category, source } = determineCategory(t.merchantKey, t.desc, t.valor, savedRules);
-          return { ...t, category, source };
+          return { ...t, category, categorySource: source };
         }
         return t;
       });
@@ -235,7 +239,7 @@ export default function App() {
   const handleReprocessTransactions = useCallback(() => {
     const updated = transactions.map((t) => {
       const { category, source } = determineCategory(t.merchantKey, t.desc, t.valor, rules);
-      return { ...t, category, source };
+      return { ...t, category, categorySource: source };
     });
     updateTransactions(updated);
     setToast({
@@ -252,13 +256,22 @@ export default function App() {
     settings: Settings;
     mode: 'replace' | 'merge';
   }) => {
+    // Sanitize any legacy 'alimentacao' transactions in backup
+    const sanitizedTransactions = backupData.transactions.map((t) => {
+      if ((t.category as string) === 'alimentacao') {
+        const { category, source } = determineCategory(t.merchantKey, t.desc, t.valor, backupData.rules);
+        return { ...t, category: category === 'alimentacao' ? 'delivery' : category, categorySource: source };
+      }
+      return t;
+    });
+
     if (backupData.mode === 'replace') {
-      updateTransactions(backupData.transactions);
+      updateTransactions(sanitizedTransactions);
       updateRules(backupData.rules);
       updateSettings(backupData.settings);
       setToast({
         id: String(Date.now()),
-        message: `Backup restaurado com sucesso! (${backupData.transactions.length} lançamentos e ${Object.keys(backupData.rules).length} regras)`,
+        message: `Backup restaurado com sucesso! (${sanitizedTransactions.length} lançamentos e ${Object.keys(backupData.rules).length} regras)`,
         type: 'success',
       });
     } else {
@@ -266,7 +279,7 @@ export default function App() {
       const existingIds = new Set(transactions.map((t) => t.id));
       const mergedTxns = [...transactions];
       let addedCount = 0;
-      backupData.transactions.forEach((t) => {
+      sanitizedTransactions.forEach((t) => {
         if (!existingIds.has(t.id)) {
           mergedTxns.push(t);
           existingIds.add(t.id);

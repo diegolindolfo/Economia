@@ -21,7 +21,7 @@ export const CATEGORIES: Record<Category, CategoryInfo> = {
   },
   delivery: {
     id: 'delivery',
-    label: 'Alimentação Delivery',
+    label: 'Delivery',
     color: '#D97706',
     bgColor: 'rgba(217, 119, 6, 0.12)',
     borderColor: 'rgba(217, 119, 6, 0.28)',
@@ -30,7 +30,7 @@ export const CATEGORIES: Record<Category, CategoryInfo> = {
   },
   mercado: {
     id: 'mercado',
-    label: 'Supermercado & Feira',
+    label: 'Mercado',
     color: '#059669',
     bgColor: 'rgba(5, 150, 105, 0.12)',
     borderColor: 'rgba(5, 150, 105, 0.28)',
@@ -39,7 +39,7 @@ export const CATEGORIES: Record<Category, CategoryInfo> = {
   },
   transporte: {
     id: 'transporte',
-    label: 'Transporte & Mobilidade',
+    label: 'Transporte',
     color: '#0284C7',
     bgColor: 'rgba(2, 132, 199, 0.12)',
     borderColor: 'rgba(2, 132, 199, 0.28)',
@@ -48,7 +48,7 @@ export const CATEGORIES: Record<Category, CategoryInfo> = {
   },
   lazer: {
     id: 'lazer',
-    label: 'Lazer & Entretenimento',
+    label: 'Lazer',
     color: '#E11D48',
     bgColor: 'rgba(225, 29, 72, 0.12)',
     borderColor: 'rgba(225, 29, 72, 0.28)',
@@ -57,7 +57,7 @@ export const CATEGORIES: Record<Category, CategoryInfo> = {
   },
   servicos: {
     id: 'servicos',
-    label: 'Serviços Gerais',
+    label: 'Serviços',
     color: '#7C3AED',
     bgColor: 'rgba(124, 58, 237, 0.12)',
     borderColor: 'rgba(124, 58, 237, 0.28)',
@@ -140,8 +140,8 @@ export const CATEGORIES: Record<Category, CategoryInfo> = {
 
 export const CATEGORY_LIST: CategoryInfo[] = [
   CATEGORIES.moradia,
-  CATEGORIES.delivery,
   CATEGORIES.mercado,
+  CATEGORIES.delivery,
   CATEGORIES.transporte,
   CATEGORIES.lazer,
   CATEGORIES.servicos,
@@ -151,7 +151,6 @@ export const CATEGORY_LIST: CategoryInfo[] = [
   CATEGORIES.assinaturas,
   CATEGORIES.investimento,
   CATEGORIES.transferencia,
-  CATEGORIES.alimentacao,
   CATEGORIES.receita,
   CATEGORIES.outros,
 ];
