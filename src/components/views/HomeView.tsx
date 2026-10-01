@@ -12,7 +12,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { Category, Settings, Transaction } from '../../types';
-import { formatCurrency, formatDateBR } from '../../lib/format';
+import { formatCurrency, formatDateBR, formatPercent } from '../../lib/format';
 import { MonthSelector } from '../MonthSelector';
 import { StatCarousel } from '../StatCarousel';
 import { DaySummary } from '../DaySummary';
@@ -29,6 +29,7 @@ interface HomeViewProps {
   onOpenImportModal: () => void;
   onOpenSettingsModal: () => void;
   onLoadSample: () => void;
+  onOpenFocusMode: () => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -41,6 +42,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onOpenImportModal,
   onOpenSettingsModal,
   onLoadSample,
+  onOpenFocusMode,
 }) => {
   // Compute balances
   const filteredTxns =
@@ -51,12 +53,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
   let totalNet = 0;
   let totalIncomes = 0;
   let totalExpenses = 0;
-  let totalInvestments = 0;
+  let appliedInvestments = 0;
+  let redeemedInvestments = 0;
 
   filteredTxns.forEach((t) => {
     totalNet += t.valor;
     if (t.category === 'investimento') {
-      totalInvestments += Math.abs(t.valor);
+      if (t.valor < 0) {
+        appliedInvestments += Math.abs(t.valor);
+      } else {
+        redeemedInvestments += t.valor;
+      }
     } else if (t.valor > 0) {
       totalIncomes += t.valor;
     } else {
@@ -64,11 +71,31 @@ export const HomeView: React.FC<HomeViewProps> = ({
     }
   });
 
+  const netInvested = appliedInvestments - redeemedInvestments;
+
+  // Compute accumulated investment reserves across all transactions
+  let totalAllNet = 0;
+  let allAppliedInvestments = 0;
+  let allRedeemedInvestments = 0;
+  transactions.forEach((t) => {
+    totalAllNet += t.valor;
+    if (t.category === 'investimento') {
+      if (t.valor < 0) allAppliedInvestments += Math.abs(t.valor);
+      else allRedeemedInvestments += t.valor;
+    }
+  });
+  const totalAccumulatedReserves = Math.max(0, allAppliedInvestments - allRedeemedInvestments);
+
   const hasOpeningBalance =
     settings.openingBalance !== null && settings.openingBalance !== undefined;
   const displayBalance = hasOpeningBalance
     ? (settings.openingBalance || 0) + totalNet
     : totalNet;
+
+  const totalConsolidatedWealth = displayBalance + totalAccumulatedReserves;
+
+  // Real savings rate: net saved into investments relative to genuine income
+  const savingsRate = totalIncomes > 0 ? (netInvested / totalIncomes) * 100 : 0;
 
   // Recent 6 transactions for clean home preview
   const recentTransactions = [...filteredTxns].slice(0, 6);
@@ -80,11 +107,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
         {/* Decorative background watermarks */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-radial from-[#253328]/40 to-transparent pointer-events-none -mr-20 -mt-20 rounded-full" />
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs uppercase font-semibold tracking-wider text-[#A39E8E]">
-                {hasOpeningBalance ? 'Saldo Real da Conta' : 'Movimentação Líquida'}
+                {hasOpeningBalance ? 'Saldo em Conta Corrente' : 'Movimentação Líquida'}
               </span>
               <span
                 className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded-md ${
@@ -97,13 +124,33 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </span>
             </div>
 
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-baseline gap-3">
               <span className="font-receipt-mono text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[#FAF8F2]">
                 {formatCurrency(displayBalance)}
               </span>
             </div>
 
-            <p className="text-xs text-[#A39E8E] mt-1 flex items-center gap-1.5">
+            {/* Consolidated Wealth Strip */}
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1B231D] border border-[#2D3930] text-[#D8D4C5]">
+                <span className="text-[#8E9B90]">Patrimônio Total:</span>
+                <span className="font-receipt-mono font-bold text-[#FAF8F2]">
+                  {formatCurrency(totalConsolidatedWealth)}
+                </span>
+              </div>
+
+              {totalAccumulatedReserves > 0 && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1F6672]/20 border border-[#1F6672]/40 text-[#71C4D1]">
+                  <TrendingUp size={12} />
+                  <span>Em Caixinhas/RDB:</span>
+                  <span className="font-receipt-mono font-bold">
+                    {formatCurrency(totalAccumulatedReserves)}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <p className="text-xs text-[#A39E8E] mt-2 flex items-center gap-1.5">
               <Calendar size={13} />
               <span>
                 {selectedMonth === 'all'
@@ -117,49 +164,105 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
 
           {/* Quick Flow Pills */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2 md:pt-0 border-t md:border-t-0 border-[#2A332B]">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2 lg:pt-0 border-t lg:border-t-0 border-[#2A332B]">
+            {/* Real Income */}
             <div className="bg-[#1D251F] p-3 rounded-xl border border-[#2E3A30]">
-              <div className="flex items-center gap-1.5 text-xs text-[#2E6B4F] font-semibold">
-                <ArrowDownLeft size={14} />
-                <span>Entradas</span>
+              <div className="flex items-center justify-between text-xs text-[#2E6B4F] font-semibold">
+                <span className="flex items-center gap-1">
+                  <ArrowDownLeft size={14} />
+                  <span>Receitas</span>
+                </span>
+                <span className="text-[10px] text-[#8E9B90]" title="Apenas receitas reais, excluindo resgates de reserva">
+                  Reais
+                </span>
               </div>
               <div className="font-receipt-mono text-sm sm:text-base font-bold text-[#E5E2D5] mt-0.5">
                 +{formatCurrency(totalIncomes)}
               </div>
+              <span className="text-[10px] text-[#8E9B90] block mt-0.5">Salários & Pix recebidos</span>
             </div>
 
+            {/* Expenses */}
             <div className="bg-[#1D251F] p-3 rounded-xl border border-[#2E3A30]">
-              <div className="flex items-center gap-1.5 text-xs text-[#C84B31] font-semibold">
-                <ArrowUpRight size={14} />
-                <span>Saídas</span>
+              <div className="flex items-center justify-between text-xs text-[#C84B31] font-semibold">
+                <span className="flex items-center gap-1">
+                  <ArrowUpRight size={14} />
+                  <span>Saídas</span>
+                </span>
+                <span className="text-[10px] text-[#8E9B90]">Gastos</span>
               </div>
               <div className="font-receipt-mono text-sm sm:text-base font-bold text-[#E5E2D5] mt-0.5">
                 -{formatCurrency(totalExpenses)}
               </div>
+              <span className="text-[10px] text-[#8E9B90] block mt-0.5">Despesas e consumo</span>
             </div>
 
+            {/* Net Investment Movement */}
             <div className="col-span-2 sm:col-span-1 bg-[#1D251F] p-3 rounded-xl border border-[#2E3A30]">
-              <div className="flex items-center gap-1.5 text-xs text-[#B96A28] font-semibold">
-                <TrendingUp size={14} />
-                <span>Investido</span>
+              <div className="flex items-center justify-between text-xs font-semibold">
+                <span className={`flex items-center gap-1 ${netInvested >= 0 ? 'text-[#1F6672]' : 'text-[#B96A28]'}`}>
+                  <TrendingUp size={14} />
+                  <span>{netInvested >= 0 ? 'Aporte Líquido' : 'Uso de Reserva'}</span>
+                </span>
               </div>
               <div className="font-receipt-mono text-sm sm:text-base font-bold text-[#E5E2D5] mt-0.5">
-                {formatCurrency(totalInvestments)}
+                {netInvested >= 0 ? `+${formatCurrency(netInvested)}` : `-${formatCurrency(Math.abs(netInvested))}`}
               </div>
+              <span className="text-[10px] text-[#8E9B90] block mt-0.5">
+                {redeemedInvestments > 0
+                  ? `+${formatCurrency(appliedInvestments)} / -${formatCurrency(redeemedInvestments)} resgatados`
+                  : 'Guardado em caixinhas'}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Action button bar inside hero on mobile */}
-        <div className="mt-4 pt-3 border-t border-[#263128] flex flex-wrap items-center justify-between gap-2 text-xs">
+        {/* Diagnosis Strip: Savings Rate / Reserve Usage */}
+        {(totalIncomes > 0 || redeemedInvestments > 0) && (
+          <div className="mt-3.5 pt-3 border-t border-[#263128] flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              {netInvested > 0 && totalIncomes > 0 ? (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#2E6B4F]/20 text-[#A7D7BC] border border-[#2E6B4F]/40 font-medium">
+                  <span>🎯 Taxa de Poupança:</span>
+                  <span className="font-bold font-mono">{formatPercent(savingsRate)}</span>
+                  <span className="text-[#8E9B90]">da renda guardada neste período</span>
+                </div>
+              ) : netInvested < 0 ? (
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#B96A28]/20 text-[#E0B589] border border-[#B96A28]/40 font-medium">
+                  <span>🛡️ Uso de Reserva:</span>
+                  <span className="font-bold font-mono">{formatCurrency(Math.abs(netInvested))}</span>
+                  <span className="text-[#A39E8E]">resgatados da caixinha (não inflou receitas)</span>
+                </div>
+              ) : null}
+
+              {redeemedInvestments > 0 && netInvested >= 0 && (
+                <span className="text-[11px] text-[#A39E8E] hidden sm:inline">
+                  ℹ️ R$ {formatCurrency(redeemedInvestments)} resgatados caíram na conta sem inflar seus ganhos.
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Action button bar inside hero */}
+        <div className="mt-3 pt-3 border-t border-[#263128] flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onOpenFocusMode}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#2E6B4F] hover:bg-[#255740] text-[#FAF8F2] font-semibold transition-colors cursor-pointer border border-[#3E8061]"
+            >
+              <Sparkles size={13} className="text-[#A7D7BC]" />
+              <span>Modo Especial & Resumos</span>
+            </button>
+
             <button
               type="button"
               onClick={onOpenSettingsModal}
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#222A23] hover:bg-[#2C362E] text-[#D8D4C5] border border-[#344036] transition-colors cursor-pointer"
             >
               <SlidersHorizontal size={13} />
-              <span>{hasOpeningBalance ? 'Ajustar Saldo' : 'Definir Saldo Inicial'}</span>
+              <span>{hasOpeningBalance ? 'Ajustar Saldo' : 'Saldo Inicial'}</span>
             </button>
             {transactions.length === 0 && (
               <button
@@ -168,7 +271,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#222A23] hover:bg-[#2C362E] text-[#B96A28] border border-[#344036] transition-colors cursor-pointer"
               >
                 <Sparkles size={13} />
-                <span>Carregar Exemplo</span>
+                <span>Exemplo</span>
               </button>
             )}
           </div>
@@ -182,6 +285,37 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <span>Novo Extrato CSV</span>
           </button>
         </div>
+      </div>
+
+      {/* Special Distraction-free Focus Mode Interactive Card */}
+      <div className="bg-[#FAF8F2] border border-[#D8D0BE] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+        <div className="flex items-start gap-3">
+          <div className="p-2.5 rounded-xl bg-[#161C17] text-[#8FB397] shrink-0 mt-0.5">
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-receipt-display font-bold text-sm sm:text-base text-[#141A15]">
+                Modo Especial Sem Distrações
+              </span>
+              <span className="text-[10px] font-mono uppercase bg-[#2E6B4F]/15 text-[#2E6B4F] px-2 py-0.5 rounded-full font-bold">
+                Novo
+              </span>
+            </div>
+            <p className="text-xs text-[#555C54] mt-0.5 max-w-xl">
+              Saudação personalizada, tela cheia com zero distrações e resumos diário, semanal e mensal de fácil leitura.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onOpenFocusMode}
+          className="w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#161C17] hover:bg-[#253027] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+        >
+          <span>Abrir Modo Especial</span>
+          <ChevronRight size={14} />
+        </button>
       </div>
 
       {/* Month Filter Selector */}
@@ -312,13 +446,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-xs sm:text-sm text-[#141A15] truncate">
-                        {txn.merchantKey || txn.description}
+                        {txn.displayName || txn.merchantKey || txn.desc}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-[11px] text-[#636A60] mt-0.5">
                       <span>{formatDateBR(txn.date)}</span>
                       <span>·</span>
-                      <span className="truncate max-w-[200px]">{txn.description}</span>
+                      <span className="truncate max-w-[200px]">{txn.desc}</span>
                     </div>
                   </div>
 

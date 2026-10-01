@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, CalendarDays, ArrowDownLeft, ArrowUpRight, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, ArrowDownLeft, ArrowUpRight, Clock, TrendingUp } from 'lucide-react';
 import { Category, Transaction } from '../types';
 import { formatCurrency, getRelativeDayLabel } from '../lib/format';
 import { CategoryChip } from './CategoryChip';
@@ -48,9 +48,18 @@ export const DaySummary: React.FC<DaySummaryProps> = ({
 
   let dayIncomes = 0;
   let dayExpenses = 0;
+  let dayInvestmentsApplied = 0;
+  let dayInvestmentsRedeemed = 0;
+
   dayTransactions.forEach((t) => {
-    if (t.valor > 0) dayIncomes += t.valor;
-    else dayExpenses += Math.abs(t.valor);
+    if (t.category === 'investimento') {
+      if (t.valor < 0) dayInvestmentsApplied += Math.abs(t.valor);
+      else dayInvestmentsRedeemed += t.valor;
+    } else if (t.valor > 0) {
+      dayIncomes += t.valor;
+    } else {
+      dayExpenses += Math.abs(t.valor);
+    }
   });
   const dayNet = dayIncomes - dayExpenses;
 
@@ -174,6 +183,22 @@ export const DaySummary: React.FC<DaySummaryProps> = ({
           </div>
         </div>
       </div>
+      
+      {/* Reserve Movement Notification */}
+      {(dayInvestmentsRedeemed > 0 || dayInvestmentsApplied > 0) && (
+        <div className="my-2.5 px-3 py-2 rounded-xl bg-[#1F6672]/10 border border-[#1F6672]/20 flex flex-wrap items-center justify-between gap-1 text-xs text-[#1F6672]">
+          <div className="flex items-center gap-1.5 font-medium">
+            <TrendingUp size={14} />
+            <span>
+              {dayInvestmentsRedeemed > 0 && dayInvestmentsApplied > 0
+                ? `Caixinhas/RDB: R$ ${formatCurrency(dayInvestmentsApplied)} guardados · R$ ${formatCurrency(dayInvestmentsRedeemed)} resgatados`
+                : dayInvestmentsRedeemed > 0
+                ? `Resgate de Reserva: R$ ${formatCurrency(dayInvestmentsRedeemed)} creditados na conta (não infla receitas do dia)`
+                : `R$ ${formatCurrency(dayInvestmentsApplied)} guardados em investimentos hoje`}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Day Transactions List */}
       <div className="pt-3">

@@ -31,6 +31,7 @@ import { ManageMenuView } from './components/views/ManageMenuView';
 import { CategorySheet } from './components/CategorySheet';
 import { ImportModal } from './components/ImportModal';
 import { SettingsModal } from './components/SettingsModal';
+import { FocusModeView } from './components/FocusModeView';
 import { ToastNotification, ToastData } from './components/ToastNotification';
 
 export default function App() {
@@ -45,6 +46,7 @@ export default function App() {
   const [activeSheetTxn, setActiveSheetTxn] = useState<Transaction | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
+  const [isFocusModeOpen, setIsFocusModeOpen] = useState<boolean>(false);
   const [toast, setToast] = useState<ToastData | null>(null);
 
   // Initialize data on mount
@@ -64,6 +66,20 @@ export default function App() {
       setTransactions(result.transactions);
       saveTransactions(result.transactions);
     }
+
+    // Global keyboard shortcut: press 'f' or 'z' to toggle special focus mode
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') {
+        return;
+      }
+      if (e.key.toLowerCase() === 'f' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        setIsFocusModeOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, []);
 
   // Sync state to localStorage whenever transactions or rules change
@@ -227,6 +243,7 @@ export default function App() {
         transactionCount={transactions.length}
         rulesCount={Object.keys(rules).length}
         onOpenImportModal={() => setIsImportModalOpen(true)}
+        onOpenFocusMode={() => setIsFocusModeOpen(true)}
       />
 
       {/* Main Container View (with padding bottom for mobile bar) */}
@@ -242,6 +259,7 @@ export default function App() {
             onOpenImportModal={() => setIsImportModalOpen(true)}
             onOpenSettingsModal={() => setIsSettingsModalOpen(true)}
             onLoadSample={handleLoadSample}
+            onOpenFocusMode={() => setIsFocusModeOpen(true)}
           />
         )}
 
@@ -290,6 +308,15 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Special Distraction-free Focus & Summary Mode (Fullscreen overlay) */}
+      <FocusModeView
+        isOpen={isFocusModeOpen}
+        onClose={() => setIsFocusModeOpen(false)}
+        transactions={transactions}
+        settings={settings}
+        selectedMonth={selectedMonth}
+      />
 
       {/* Category Adjustment Sheet (Bottom sheet mobile / modal desktop) */}
       <CategorySheet

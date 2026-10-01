@@ -6,6 +6,7 @@ import {
   TrendingUp,
   SlidersHorizontal,
   UploadCloud,
+  Sparkles,
 } from 'lucide-react';
 
 export type TabType = 'home' | 'statement' | 'categories' | 'investments' | 'menu';
@@ -16,6 +17,7 @@ interface NavigationProps {
   transactionCount: number;
   rulesCount: number;
   onOpenImportModal: () => void;
+  onOpenFocusMode: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -23,6 +25,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   onSelectTab,
   transactionCount,
   onOpenImportModal,
+  onOpenFocusMode,
 }) => {
   const tabs = [
     {
@@ -111,8 +114,18 @@ export const Navigation: React.FC<NavigationProps> = ({
               })}
             </nav>
 
-            {/* Right Action Button (Desktop Quick Import) */}
+            {/* Right Action Buttons */}
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onOpenFocusMode}
+                title="Ativar Modo Foco & Resumo Sem Distrações"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#2E6B4F] hover:bg-[#255740] text-[#FAF8F2] font-semibold text-xs sm:text-sm shadow-sm transition-all cursor-pointer min-h-[40px] active:scale-95 border border-[#3E8061]"
+              >
+                <Sparkles size={15} className="text-[#A7D7BC]" />
+                <span>Modo Foco</span>
+              </button>
+
               <button
                 type="button"
                 onClick={onOpenImportModal}

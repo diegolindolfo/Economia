@@ -35,6 +35,7 @@ export const StatementView: React.FC<StatementViewProps> = ({
         selectedCategory={selectedCategory}
         onSelectCategory={onSelectCategory}
         selectedMonth={selectedMonth}
+        onSelectMonth={onSelectMonth}
         onOpenCategorySheet={onOpenCategorySheet}
       />
     </div>

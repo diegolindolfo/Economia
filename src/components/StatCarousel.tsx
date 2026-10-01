@@ -19,15 +19,19 @@ export const StatCarousel: React.FC<StatCarouselProps> = ({
 
   let totalExpenses = 0;
   let totalIncomes = 0;
-  let totalInvestments = 0;
+  let appliedInvestments = 0;
+  let redeemedInvestments = 0;
   let expenseCount = 0;
   let incomeCount = 0;
   let investmentCount = 0;
 
   filtered.forEach((t) => {
     if (t.category === 'investimento') {
-      // Net investment movement
-      totalInvestments += Math.abs(t.valor);
+      if (t.valor < 0) {
+        appliedInvestments += Math.abs(t.valor);
+      } else {
+        redeemedInvestments += t.valor;
+      }
       investmentCount++;
     } else if (t.valor > 0) {
       totalIncomes += t.valor;
@@ -38,6 +42,7 @@ export const StatCarousel: React.FC<StatCarouselProps> = ({
     }
   });
 
+  const netInvested = appliedInvestments - redeemedInvestments;
   const netMonth = totalIncomes - totalExpenses;
 
   const stats = [
@@ -63,19 +68,23 @@ export const StatCarousel: React.FC<StatCarouselProps> = ({
       color: 'text-[#2E6B4F]',
       bgColor: 'bg-[#2E6B4F]/10',
       borderColor: 'border-[#2E6B4F]/20',
-      description: 'Salário, depósitos e Pix recebidos',
+      description: 'Salário & Pix (sem inflar com resgates)',
     },
     {
       id: 'investido',
-      title: 'Investido (RDB/Caixinhas)',
-      amount: totalInvestments,
+      title: netInvested >= 0 ? 'Aporte Líquido' : 'Uso de Reserva',
+      amount: netInvested,
       count: investmentCount,
-      countLabel: 'aportes/resgates',
+      countLabel: 'movimentações',
       icon: TrendingUp,
-      color: 'text-[#1F6672]',
-      bgColor: 'bg-[#1F6672]/10',
-      borderColor: 'border-[#1F6672]/20',
-      description: 'Aplicações e reservas',
+      color: netInvested >= 0 ? 'text-[#1F6672]' : 'text-[#B96A28]',
+      bgColor: netInvested >= 0 ? 'bg-[#1F6672]/10' : 'bg-[#B96A28]/10',
+      borderColor: netInvested >= 0 ? 'border-[#1F6672]/20' : 'border-[#B96A28]/20',
+      description:
+        redeemedInvestments > 0
+          ? `${formatCurrency(appliedInvestments)} aplicados · ${formatCurrency(redeemedInvestments)} resgatados`
+          : 'Guardado em reservas / RDB',
+      showSign: true,
     },
     {
       id: 'balanco',
@@ -87,7 +96,7 @@ export const StatCarousel: React.FC<StatCarouselProps> = ({
       color: netMonth >= 0 ? 'text-[#2E6B4F]' : 'text-[#AE3B2B]',
       bgColor: netMonth >= 0 ? 'bg-[#2E6B4F]/10' : 'bg-[#AE3B2B]/10',
       borderColor: netMonth >= 0 ? 'border-[#2E6B4F]/20' : 'border-[#AE3B2B]/20',
-      description: netMonth >= 0 ? 'Superávit no período' : 'Déficit no período',
+      description: netMonth >= 0 ? 'Superávit operacional' : 'Déficit operacional',
       showSign: true,
     },
   ];
