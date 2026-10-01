@@ -8,11 +8,11 @@
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "tsx --test src/lib/format.test.ts src/lib/csv/parseStatement.test.ts src/lib/finance/balance.test.ts src/lib/backup/validateBackup.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
-    "@phosphor-icons/react": "^2.1.10",
     "@tailwindcss/vite": "^4.1.14",
     "@types/canvas-confetti": "^1.9.0",
     "@types/papaparse": "^5.5.2",

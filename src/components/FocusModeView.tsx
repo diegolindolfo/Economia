@@ -1,32 +1,27 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  Sparkle,
+  Sparkles,
   Sun,
-  SunHorizon,
+  Sunrise,
   Moon,
-  CalendarBlank,
-  ChartBar,
-  TrendUp,
-  TrendDown,
+  CalendarDays,
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
   Eye,
-  EyeSlash,
-  ArrowsOut,
-  ArrowsIn,
+  EyeOff,
+  Maximize,
+  Minimize,
   X,
-  Wallet,
-  CheckCircle,
-  Receipt,
-  ArrowRight,
-  CaretRight,
-  CirclesFour,
-  Flame,
+  LayoutGrid,
   ArrowDownRight,
   ArrowUpRight,
-} from '@phosphor-icons/react';
+} from 'lucide-react';
 import { Category, Settings, Transaction } from '../types';
 import { CATEGORIES } from '../lib/categorization/categories';
 import { formatCurrency, formatDateBR, formatPercent } from '../lib/format';
 import { CategoryChip } from './CategoryChip';
+import { calculateAccountBalance } from '../lib/finance/balance';
 
 interface FocusModeViewProps {
   isOpen: boolean;
@@ -61,7 +56,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
 
     if (hour >= 12 && hour < 18) {
       greeting = 'Boa tarde';
-      icon = SunHorizon;
+      icon = Sunrise;
       periodName = 'tarde';
     } else if (hour >= 18 || hour < 5) {
       greeting = 'Boa noite';
@@ -177,17 +172,15 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
     }
 
     // 1. Overall Balance & Total Investment Reserves
-    let totalAllNet = 0;
     let allAppliedInvestments = 0;
     let allRedeemedInvestments = 0;
     transactions.forEach((t) => {
-      totalAllNet += t.valor;
       if (t.category === 'investimento') {
         if (t.valor < 0) allAppliedInvestments += Math.abs(t.valor);
         else allRedeemedInvestments += t.valor;
       }
     });
-    const overallBalance = (settings.openingBalance || 0) + totalAllNet;
+    const overallBalance = calculateAccountBalance(transactions, settings);
     const accumulatedReserves = Math.max(0, allAppliedInvestments - allRedeemedInvestments);
     const consolidatedWealth = overallBalance + accumulatedReserves;
 
@@ -386,7 +379,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
   return (
     <div
       className={`fixed inset-0 z-50 overflow-y-auto flex flex-col transition-colors duration-300 ${
-        isDark ? 'bg-[#141A15] text-[#FAF8F2]' : 'bg-[#EDE8DC] text-[#141A15]'
+        isDark ? 'dark bg-[#141A15] text-[#FAF8F2]' : 'bg-[#EDE8DC] text-[#141A15]'
       }`}
     >
       {/* Top Floating Minimalist Bar */}
@@ -400,7 +393,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
         {/* Left: Mode Stamp */}
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-[#2E6B4F] text-[#FAF8F2] flex items-center justify-center font-receipt-display font-bold text-base shadow-xs">
-            <Sparkle weight="fill" size={17} />
+            <Sparkles size={17} />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -408,7 +401,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                 MODO FOCO
               </span>
               <span
-                className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold uppercase ${
+                className={`text-[11px] font-mono px-2 py-0.5 rounded-full font-bold uppercase ${
                   isDark ? 'bg-[#222C24] text-[#A2B1A6]' : 'bg-[#DDD6C4] text-[#4F5950]'
                 }`}
               >
@@ -434,7 +427,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                 : 'bg-[#FAF8F2] border-[#D8D2C0] text-[#3E473F] hover:text-[#141A15] hover:bg-[#F2ECE0]'
             }`}
           >
-            {hideValues ? <EyeSlash size={17} weight="bold" /> : <Eye size={17} weight="bold" />}
+            {hideValues ? <EyeOff size={17} /> : <Eye size={17} />}
             <span className="hidden md:inline">{hideValues ? 'Mostrar' : 'Privacidade'}</span>
           </button>
 
@@ -449,7 +442,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                 : 'bg-[#FAF8F2] border-[#D8D2C0] text-[#3E473F] hover:text-[#141A15] hover:bg-[#F2ECE0]'
             }`}
           >
-            {isDark ? <Sun size={17} weight="bold" /> : <Moon size={17} weight="bold" />}
+            {isDark ? <Sun size={17} /> : <Moon size={17} />}
             <span className="hidden md:inline">{isDark ? 'Tema Papel' : 'Tema Escuro'}</span>
           </button>
 
@@ -464,7 +457,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                 : 'bg-[#FAF8F2] border-[#D8D2C0] text-[#3E473F] hover:text-[#141A15] hover:bg-[#F2ECE0]'
             }`}
           >
-            {isFullscreen ? <ArrowsIn size={17} weight="bold" /> : <ArrowsOut size={17} weight="bold" />}
+            {isFullscreen ? <Minimize size={17} /> : <Maximize size={17} />}
           </button>
 
           {/* Close Action */}
@@ -478,7 +471,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                 : 'bg-[#141A15] text-[#FAF8F2] hover:bg-[#222B24]'
             }`}
           >
-            <X size={16} weight="bold" />
+            <X size={16} />
             <span>Sair</span>
           </button>
         </div>
@@ -489,7 +482,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
         {/* Big Editorial Greeting */}
         <section className="space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-wide bg-[#2E6B4F]/15 text-[#2E6B4F] dark:text-[#8FB397] border border-[#2E6B4F]/25">
-            <GreetingIcon size={16} weight="duotone" />
+            <GreetingIcon size={16} />
             <span>Saudação do Momento</span>
           </div>
 
@@ -511,7 +504,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
             >
               <div className="flex flex-wrap items-center gap-6 sm:gap-8">
                 <div>
-                  <span className={`text-[11px] font-mono font-bold uppercase tracking-wider block ${isDark ? 'text-[#8E9B90]' : 'text-[#646E65]'}`}>
+                  <span className={`text-xs font-mono font-bold uppercase tracking-wider block ${isDark ? 'text-[#A9B4AA]' : 'text-[#555C54]'}`}>
                     Saldo em Conta
                   </span>
                   <div className="font-receipt-mono text-xl sm:text-2xl font-bold tracking-tight text-[#141A15] dark:text-[#FAF8F2] mt-0.5">
@@ -523,7 +516,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                   <>
                     <div className={`hidden sm:block h-9 w-px ${isDark ? 'bg-[#2A372C]' : 'bg-[#DED7C6]'}`} />
                     <div>
-                      <span className="text-[11px] font-mono font-bold uppercase tracking-wider block text-[#1F6672] dark:text-[#71C4D1]">
+                      <span className="text-xs font-mono font-bold uppercase tracking-wider block text-[#1F6672] dark:text-[#71C4D1]">
                         Caixinhas / RDB
                       </span>
                       <div className="font-receipt-mono text-xl sm:text-2xl font-bold tracking-tight text-[#1F6672] dark:text-[#71C4D1] mt-0.5">
@@ -533,7 +526,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
 
                     <div className={`hidden sm:block h-9 w-px ${isDark ? 'bg-[#2A372C]' : 'bg-[#DED7C6]'}`} />
                     <div>
-                      <span className="text-[11px] font-mono font-bold uppercase tracking-wider block text-[#2E6B4F] dark:text-[#58B983]">
+                      <span className="text-xs font-mono font-bold uppercase tracking-wider block text-[#2E6B4F] dark:text-[#58B983]">
                         Patrimônio Total
                       </span>
                       <div className="font-receipt-mono text-xl sm:text-2xl font-bold tracking-tight text-[#2E6B4F] dark:text-[#58B983] mt-0.5">
@@ -570,7 +563,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                 : 'text-[#555C54] hover:text-[#141A15]'
             }`}
           >
-            <CirclesFour size={18} weight={period === 'overview' ? 'fill' : 'bold'} />
+            <LayoutGrid size={18} />
             <span>Visão Completa</span>
           </button>
 
@@ -587,7 +580,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                 : 'text-[#555C54] hover:text-[#141A15]'
             }`}
           >
-            <Sun size={18} weight={period === 'daily' ? 'fill' : 'bold'} />
+            <Sun size={18} />
             <span>Hoje (Diário)</span>
           </button>
 
@@ -604,7 +597,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                 : 'text-[#555C54] hover:text-[#141A15]'
             }`}
           >
-            <CalendarBlank size={18} weight={period === 'weekly' ? 'fill' : 'bold'} />
+            <CalendarDays size={18} />
             <span>Semanal (7 Dias)</span>
           </button>
 
@@ -621,7 +614,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                 : 'text-[#555C54] hover:text-[#141A15]'
             }`}
           >
-            <ChartBar size={18} weight={period === 'monthly' ? 'fill' : 'bold'} />
+            <BarChart3 size={18} />
             <span>Mensal</span>
           </button>
         </nav>
@@ -639,7 +632,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#D8D2C0] dark:border-[#2F3E32]">
               <div className="flex items-center gap-3">
                 <div className="p-3 rounded-2xl bg-[#2E6B4F]/15 text-[#2E6B4F] dark:text-[#8FB397]">
-                  <Sun size={26} weight="duotone" />
+                  <Sun size={26} />
                 </div>
                 <div>
                   <h2 className="font-receipt-display text-2xl sm:text-3xl font-bold tracking-tight">
@@ -661,9 +654,9 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                   }`}
                 >
                   {dailyData.net >= 0 ? (
-                    <ArrowUpRight size={15} weight="bold" />
+                    <ArrowUpRight size={15} />
                   ) : (
-                    <ArrowDownRight size={15} weight="bold" />
+                    <ArrowDownRight size={15} />
                   )}
                   <span>Saldo Líquido: {renderValue(dailyData.net, true)}</span>
                 </span>
@@ -682,7 +675,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
               >
                 <div className="flex items-center justify-between text-xs font-mono font-bold uppercase text-[#C75450] dark:text-[#DE7777] mb-2">
                   <span className="flex items-center gap-1.5">
-                    <TrendDown size={18} weight="bold" />
+                    <TrendingDown size={18} />
                     <span>Total Saídas Hoje</span>
                   </span>
                   <span>Gasto</span>
@@ -707,7 +700,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
               >
                 <div className="flex items-center justify-between text-xs font-mono font-bold uppercase text-[#2E6B4F] dark:text-[#58B983] mb-2">
                   <span className="flex items-center gap-1.5">
-                    <TrendUp size={18} weight="bold" />
+                    <TrendingUp size={18} />
                     <span>Receitas Reais Hoje</span>
                   </span>
                   <span>Recebido</span>
@@ -731,7 +724,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                 }`}
               >
                 <div className="flex items-center gap-2 font-medium">
-                  <TrendUp size={17} weight="bold" />
+                  <TrendingUp size={17} />
                   <span>
                     {dailyData.redeemed > 0 && dailyData.applied > 0
                       ? `Caixinhas/RDB: ${renderValue(dailyData.applied)} aplicados · ${renderValue(dailyData.redeemed)} resgatados`
@@ -741,7 +734,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                   </span>
                 </div>
                 {dailyData.redeemed > 0 && (
-                  <span className="text-[11px] opacity-85">
+                  <span className="text-xs opacity-90">
                     O dinheiro já está disponível no seu saldo da conta, mas não entra nas receitas do dia.
                   </span>
                 )}
@@ -815,7 +808,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#D8D2C0] dark:border-[#2F3E32]">
               <div className="flex items-center gap-3">
                 <div className="p-3 rounded-2xl bg-[#B96A28]/15 text-[#B96A28] dark:text-[#E08D46]">
-                  <CalendarBlank size={26} weight="duotone" />
+                  <CalendarDays size={26} />
                 </div>
                 <div>
                   <h2 className="font-receipt-display text-2xl sm:text-3xl font-bold tracking-tight">
@@ -868,11 +861,11 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                   {renderValue(weeklyData.incomes)}
                 </div>
                 {weeklyData.redeemed > 0 ? (
-                  <span className="text-[10px] text-[#8E9B90] block mt-1">
+                  <span className="text-xs text-[#A9B4AA] block mt-1">
                     + {renderValue(weeklyData.redeemed)} resgatados de reserva
                   </span>
                 ) : (
-                  <span className="text-[10px] text-[#8E9B90] block mt-1">
+                  <span className="text-xs text-[#A9B4AA] block mt-1">
                     Ganhos reais no período
                   </span>
                 )}
@@ -923,7 +916,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
 
                   return (
                     <div key={day.date} className="flex flex-col items-center gap-2 h-full justify-end group">
-                      <span className="text-[11px] font-receipt-mono text-[#8E9B90] hidden sm:block">
+                      <span className="text-xs font-receipt-mono text-[#A9B4AA] hidden sm:block">
                         {isZero ? '-' : renderValue(day.expenses)}
                       </span>
                       <div className="w-full max-w-[36px] h-24 flex items-end justify-center bg-[#E5DEC9]/40 dark:bg-[#2A362D]/40 rounded-xl overflow-hidden p-0.5">
@@ -937,7 +930,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                         />
                       </div>
                       <span className="text-xs font-bold text-[#141A15] dark:text-[#FAF8F2]">{day.dayName}</span>
-                      <span className="text-[10px] text-[#8E9B90] -mt-1 font-mono">{day.dayNum}</span>
+                      <span className="text-[11px] text-[#A9B4AA] -mt-1 font-mono">{day.dayNum}</span>
                     </div>
                   );
                 })}
@@ -959,7 +952,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#D8D2C0] dark:border-[#2F3E32]">
               <div className="flex items-center gap-3">
                 <div className="p-3 rounded-2xl bg-[#2E6B4F]/15 text-[#2E6B4F] dark:text-[#8FB397]">
-                  <ChartBar size={26} weight="duotone" />
+                  <BarChart3 size={26} />
                 </div>
                 <div>
                   <h2 className="font-receipt-display text-2xl sm:text-3xl font-bold tracking-tight">
@@ -1001,7 +994,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                 <div className="font-receipt-display text-2xl font-bold mt-1 text-[#2E6B4F] dark:text-[#58B983]">
                   {renderValue(monthlyData.incomes)}
                 </div>
-                <span className="text-[10px] text-[#8E9B90] block mt-1">Ganhos reais do mês</span>
+                <span className="text-xs text-[#A9B4AA] block mt-1">Ganhos reais do mês</span>
               </div>
 
               <div
@@ -1015,7 +1008,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                 <div className="font-receipt-display text-2xl font-bold mt-1 text-[#C75450] dark:text-[#DE7777]">
                   {renderValue(monthlyData.expenses)}
                 </div>
-                <span className="text-[10px] text-[#8E9B90] block mt-1">Despesas e consumo</span>
+                <span className="text-xs text-[#A9B4AA] block mt-1">Despesas e consumo</span>
               </div>
 
               <div
@@ -1029,7 +1022,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                 <div className={`font-receipt-display text-2xl font-bold mt-1 ${monthlyData.netInvested >= 0 ? 'text-[#1F6672] dark:text-[#71C4D1]' : 'text-[#B96A28] dark:text-[#E08D46]'}`}>
                   {renderValue(monthlyData.netInvested, true)}
                 </div>
-                <span className="text-[10px] text-[#8E9B90] block mt-1">
+                <span className="text-xs text-[#A9B4AA] block mt-1">
                   {monthlyData.redeemed > 0
                     ? `${renderValue(monthlyData.applied)} aplic. · ${renderValue(monthlyData.redeemed)} resg.`
                     : 'Caixinhas / RDB'}
@@ -1047,7 +1040,7 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                 <div className="font-receipt-display text-2xl font-bold mt-1 text-[#B96A28] dark:text-[#E08D46]">
                   {formatPercent(monthlyData.savingsRate)}
                 </div>
-                <span className="text-[10px] text-[#8E9B90] block mt-1">
+                <span className="text-xs text-[#A9B4AA] block mt-1">
                   {monthlyData.savingsRate > 0
                     ? 'da renda guardada'
                     : monthlyData.netInvested < 0
@@ -1067,12 +1060,12 @@ export const FocusModeView: React.FC<FocusModeViewProps> = ({
                 }`}
               >
                 <div className="flex items-center gap-2 font-medium">
-                  <TrendUp size={17} weight="bold" />
+                  <TrendingUp size={17} />
                   <span>
                     Resgates de Reserva no Mês: foram resgatados <strong>{renderValue(monthlyData.redeemed)}</strong> de investimentos.
                   </span>
                 </div>
-                <span className="text-[11px] opacity-85">
+                <span className="text-xs opacity-90">
                   Esse valor foi creditado na conta corrente, sem inflar sua receita do mês.
                 </span>
               </div>

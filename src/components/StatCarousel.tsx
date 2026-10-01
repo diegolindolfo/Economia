@@ -129,9 +129,9 @@ export const StatCarousel: React.FC<StatCarouselProps> = ({
                 </div>
               </div>
 
-              <div className="pt-2 mt-2 border-t border-[#D6D0BC]/40 flex items-center justify-between text-[11px] text-[#63665C]">
-                <span>{item.description}</span>
-                <span className="font-mono font-medium">
+              <div className="pt-2 mt-2 border-t border-[#D6D0BC]/40 flex flex-col gap-1 text-xs leading-5 text-[#555C54] sm:flex-row sm:items-center sm:justify-between">
+                <span className="min-w-0">{item.description}</span>
+                <span className="font-mono font-medium sm:shrink-0">
                   {item.count} {item.countLabel}
                 </span>
               </div>

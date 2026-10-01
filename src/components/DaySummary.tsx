@@ -74,7 +74,7 @@ export const DaySummary: React.FC<DaySummaryProps> = ({
             <CalendarDays size={16} />
           </div>
           <div>
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#63665C] block">
+            <span className="text-xs uppercase tracking-wider font-semibold text-[#555C54] block">
               Resumo do Dia
             </span>
             <h3 className="font-receipt-display text-base sm:text-lg font-bold text-[#1E241F] leading-tight">
@@ -137,7 +137,7 @@ export const DaySummary: React.FC<DaySummaryProps> = ({
             >
               <span>{dayNum}/{monthNum}</span>
               <span
-                className={`text-[10px] px-1 rounded-full ${
+                className={`text-[11px] px-1 rounded-full ${
                   isCurrent ? 'bg-[#38433A] text-white' : 'bg-[#D6D0BC]/70 text-[#1E241F]'
                 }`}
               >
@@ -151,7 +151,7 @@ export const DaySummary: React.FC<DaySummaryProps> = ({
       {/* Daily Metrics */}
       <div className="grid grid-cols-3 gap-2 py-3 border-b border-[#D6D0BC]/60 text-center">
         <div className="p-2 rounded-xl bg-[#EAE6D9]/50 border border-[#D6D0BC]/60">
-          <div className="flex items-center justify-center gap-1 text-[11px] text-[#AE3B2B] font-semibold">
+          <div className="flex items-center justify-center gap-1 text-xs text-[#AE3B2B] font-semibold">
             <ArrowUpRight size={13} />
             <span>Gastos</span>
           </div>
@@ -161,7 +161,7 @@ export const DaySummary: React.FC<DaySummaryProps> = ({
         </div>
 
         <div className="p-2 rounded-xl bg-[#EAE6D9]/50 border border-[#D6D0BC]/60">
-          <div className="flex items-center justify-center gap-1 text-[11px] text-[#2E6B4F] font-semibold">
+          <div className="flex items-center justify-center gap-1 text-xs text-[#2E6B4F] font-semibold">
             <ArrowDownLeft size={13} />
             <span>Entradas</span>
           </div>
@@ -171,7 +171,7 @@ export const DaySummary: React.FC<DaySummaryProps> = ({
         </div>
 
         <div className="p-2 rounded-xl bg-[#EAE6D9]/50 border border-[#D6D0BC]/60">
-          <div className="text-[11px] text-[#63665C] font-semibold">
+          <div className="text-xs text-[#555C54] font-semibold">
             Líquido do Dia
           </div>
           <div
@@ -204,7 +204,7 @@ export const DaySummary: React.FC<DaySummaryProps> = ({
       <div className="pt-3">
         <div className="text-xs font-semibold uppercase tracking-wider text-[#63665C] mb-2 flex items-center justify-between">
           <span>Movimentações ({dayTransactions.length})</span>
-          <span className="text-[11px] text-[#63665C] font-normal flex items-center gap-1">
+          <span className="text-xs text-[#555C54] font-normal flex items-center gap-1">
             <Clock size={11} /> Toque para reclassificar
           </span>
         </div>
@@ -234,7 +234,7 @@ export const DaySummary: React.FC<DaySummaryProps> = ({
                       <div className="text-xs sm:text-sm font-semibold text-[#1E241F] truncate">
                         {txn.displayName}
                       </div>
-                      <div className="text-[10px] text-[#63665C] truncate font-mono">
+                      <div className="text-xs text-[#555C54] truncate font-mono">
                         {txn.desc}
                       </div>
                     </div>

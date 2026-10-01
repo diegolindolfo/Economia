@@ -75,10 +75,8 @@ export default function App() {
       setTransactions(upgradedTxns);
       saveTransactions(upgradedTxns);
     } else {
-      // Zero-friction initial experience: load realistic sample data immediately
-      const result = parseNubankCSV(SAMPLE_NUBANK_CSV, [], savedRules);
-      setTransactions(result.transactions);
-      saveTransactions(result.transactions);
+      // Keep a clean first run; sample data remains available as an explicit action.
+      setTransactions([]);
     }
 
     // Global keyboard shortcut: press 'f' or 'z' to toggle special focus mode
@@ -133,7 +131,9 @@ export default function App() {
 
         setToast({
           id: String(Date.now()),
-          message: `${result.newCount} novas transações importadas com sucesso!`,
+          message: result.errors.length > 0
+            ? `${result.newCount} transações importadas; ${result.errors.length} linha(s) precisam de atenção.`
+            : `${result.newCount} novas transações importadas com sucesso!`,
           type: 'success',
         });
       } else if (result.duplicateCount > 0) {

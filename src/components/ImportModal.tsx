@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { UploadCloud, FileText, X, Sparkles, AlertCircle, CheckCircle2, Database, ArrowRight } from 'lucide-react';
 import { CategoryRule, ParseResult, Settings, Transaction } from '../types';
 import { SAMPLE_NUBANK_CSV } from '../data/sampleData';
+import { validateBackupPayload } from '../lib/backup/validateBackup';
 
 interface ImportModalProps {
   isOpen: boolean;
@@ -56,34 +57,23 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target?.result as string;
-      if (!content) return;
+      if (!content?.trim()) {
+        setErrorMessage('O arquivo está vazio.');
+        return;
+      }
 
       if (isJson || content.trim().startsWith('{') || content.trim().startsWith('[')) {
         try {
-          const parsed = JSON.parse(content);
-          let txns: Transaction[] = [];
-          let parsedRules: Record<string, CategoryRule> = {};
-          let parsedSettings: Settings = { openingBalance: null, openingBalanceDate: null };
-
-          if (Array.isArray(parsed)) {
-            txns = parsed;
-          } else if (parsed && typeof parsed === 'object') {
-            if (Array.isArray(parsed.transactions)) txns = parsed.transactions;
-            if (parsed.rules && typeof parsed.rules === 'object') parsedRules = parsed.rules;
-            if (parsed.settings && typeof parsed.settings === 'object') parsedSettings = parsed.settings;
-          }
-
-          if (txns.length > 0 || Object.keys(parsedRules).length > 0) {
-            setJsonBackupPreview({
-              transactions: txns,
-              rules: parsedRules,
-              settings: parsedSettings,
-              fileName: file.name,
-            });
+          const validation = validateBackupPayload(JSON.parse(content));
+          if (!validation.data) {
+            setErrorMessage(validation.errors.join(' '));
             return;
           }
+          setJsonBackupPreview({ ...validation.data, fileName: file.name });
+          return;
         } catch (_) {
-          // not json, fallback to csv
+          setErrorMessage('Não foi possível ler o arquivo JSON. Verifique se ele está íntegro.');
+          return;
         }
       }
 
@@ -115,38 +105,26 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     const trimmed = csvText.trim();
     if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
       try {
-        const parsed = JSON.parse(trimmed);
-        let txns: Transaction[] = [];
-        let parsedRules: Record<string, CategoryRule> = {};
-        let parsedSettings: Settings = { openingBalance: null, openingBalanceDate: null };
-
-        if (Array.isArray(parsed)) {
-          txns = parsed;
-        } else if (parsed && typeof parsed === 'object') {
-          if (Array.isArray(parsed.transactions)) txns = parsed.transactions;
-          if (parsed.rules && typeof parsed.rules === 'object') parsedRules = parsed.rules;
-          if (parsed.settings && typeof parsed.settings === 'object') parsedSettings = parsed.settings;
-        }
-
-        if (txns.length > 0 || Object.keys(parsedRules).length > 0) {
-          setJsonBackupPreview({
-            transactions: txns,
-            rules: parsedRules,
-            settings: parsedSettings,
-            fileName: 'texto_colado.json',
-          });
+        const validation = validateBackupPayload(JSON.parse(trimmed));
+        if (!validation.data) {
+          setErrorMessage(validation.errors.join(' '));
           return;
         }
+        setJsonBackupPreview({ ...validation.data, fileName: 'texto_colado.json' });
+        return;
       } catch (_) {
-        // continue as CSV
+        setErrorMessage('O texto parece JSON, mas não está bem formado.');
+        return;
       }
     }
 
     try {
       const result = onImportCSV(csvText);
       setLastResult(result);
-      if (result.totalParsed === 0 && result.errors.length > 0) {
-        setErrorMessage(result.errors.join(', '));
+      if (result.totalParsed === 0) {
+        setErrorMessage(result.errors.join(' ') || 'Nenhum lançamento válido foi encontrado no CSV.');
+      } else if (result.errors.length > 0) {
+        setErrorMessage(result.errors.join(' '));
       } else {
         setTimeout(() => {
           onClose();
@@ -303,6 +281,12 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                   </span>
                 )}
               </div>
+            </div>
+          )}
+
+          {lastResult && lastResult.newCount === 0 && lastResult.duplicateCount > 0 && !errorMessage && (
+            <div className="p-3 rounded-xl bg-[#1F6672]/10 border border-[#1F6672]/30 text-xs text-[#1F6672]">
+              {lastResult.duplicateCount} transação(ões) já estavam cadastradas; nenhum dado foi duplicado.
             </div>
           )}
 

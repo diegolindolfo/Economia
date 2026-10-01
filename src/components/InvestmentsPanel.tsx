@@ -40,7 +40,7 @@ export const InvestmentsPanel: React.FC<InvestmentsPanelProps> = ({
             <TrendingUp size={16} />
           </div>
           <div>
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#63665C] block">
+            <span className="text-xs uppercase tracking-wider font-semibold text-[#555C54] block">
               Patrimônio & Reservas
             </span>
             <h3 className="font-receipt-display text-base sm:text-lg font-bold text-[#1E241F] leading-tight">
@@ -65,7 +65,7 @@ export const InvestmentsPanel: React.FC<InvestmentsPanelProps> = ({
           <div className="font-receipt-mono text-lg font-bold text-[#1F6672]">
             {formatCurrency(totalApplied)}
           </div>
-          <span className="text-[10px] text-[#63665C]">Transferido para o RDB</span>
+          <span className="text-xs text-[#555C54]">Transferido para o RDB</span>
         </div>
 
         <div className="p-3 rounded-xl bg-[#EAE6D9]/50 border border-[#D6D0BC]/60">
@@ -76,7 +76,7 @@ export const InvestmentsPanel: React.FC<InvestmentsPanelProps> = ({
           <div className="font-receipt-mono text-lg font-bold text-[#2E6B4F]">
             {formatCurrency(totalRedeemed)}
           </div>
-          <span className="text-[10px] text-[#63665C]">Retornado para conta corrente</span>
+          <span className="text-xs text-[#555C54]">Retornado para conta corrente</span>
         </div>
 
         <div className="p-3 rounded-xl bg-[#EAE6D9]/50 border border-[#D6D0BC]/60">
@@ -87,7 +87,7 @@ export const InvestmentsPanel: React.FC<InvestmentsPanelProps> = ({
           <div className="font-receipt-mono text-lg font-bold text-[#1E241F]">
             {formatCurrency(netInvested, true)}
           </div>
-          <span className="text-[10px] text-[#63665C]">Variação líquida de reserva</span>
+          <span className="text-xs text-[#555C54]">Variação líquida de reserva</span>
         </div>
       </div>
 
@@ -95,7 +95,7 @@ export const InvestmentsPanel: React.FC<InvestmentsPanelProps> = ({
       <div>
         <div className="text-xs font-semibold uppercase tracking-wider text-[#63665C] mb-2 flex items-center justify-between">
           <span>Movimentações de Investimento ({investmentTransactions.length})</span>
-          <span className="text-[10px] text-[#63665C]">Auto-detectado por RDB/Investimento</span>
+          <span className="text-xs text-[#555C54]">Auto-detectado por RDB/Investimento</span>
         </div>
 
         {investmentTransactions.length === 0 ? (
@@ -123,7 +123,7 @@ export const InvestmentsPanel: React.FC<InvestmentsPanelProps> = ({
                       <div className="text-xs sm:text-sm font-semibold text-[#1E241F] truncate">
                         {txn.desc}
                       </div>
-                      <div className="text-[10px] text-[#63665C] font-mono">
+                      <div className="text-xs text-[#555C54] font-mono">
                         {formatDateBR(txn.date)}
                       </div>
                     </div>

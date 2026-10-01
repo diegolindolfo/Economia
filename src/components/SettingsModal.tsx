@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, SlidersHorizontal, Trash2, Check, AlertTriangle, Coins } from 'lucide-react';
 import { Settings } from '../types';
-import { formatCurrency } from '../lib/format';
+import { parseLocalizedAmount } from '../lib/format';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -27,14 +27,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     return settings.openingBalanceDate || '';
   });
   const [confirmClear, setConfirmClear] = useState(false);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setOpeningBalanceStr(settings.openingBalance !== null && settings.openingBalance !== undefined
+      ? settings.openingBalance.toString()
+      : '');
+    setOpeningDate(settings.openingBalanceDate || '');
+    setBalanceError(null);
+  }, [settings.openingBalance, settings.openingBalanceDate]);
 
   if (!isOpen) return null;
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = openingBalanceStr.trim() ? parseFloat(openingBalanceStr.replace(',', '.')) : null;
+    const parsed = parseLocalizedAmount(openingBalanceStr);
+    if (openingBalanceStr.trim() && parsed === null) {
+      setBalanceError('Informe um valor válido, como 1.250,50 ou 1250.50.');
+      return;
+    }
+    setBalanceError(null);
     onSaveSettings({
-      openingBalance: isNaN(parsed as number) ? null : parsed,
+      openingBalance: parsed,
       openingBalanceDate: openingDate || null,
     });
     onClose();
@@ -102,19 +116,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <input
                   type="text"
                   value={openingBalanceStr}
-                  onChange={(e) => setOpeningBalanceStr(e.target.value)}
-                  placeholder="Ex: 2500.00"
+                  onChange={(e) => {
+                    setOpeningBalanceStr(e.target.value);
+                    setBalanceError(null);
+                  }}
+                  placeholder="Ex: 1.250,50"
+                  aria-invalid={Boolean(balanceError)}
                   className="w-full pl-10 pr-4 py-2 text-sm bg-[#F5F2E7] border border-[#D6D0BC] rounded-xl font-mono text-[#1E241F] focus:outline-none focus:border-[#1E241F] focus:ring-1 focus:ring-[#1E241F]/30"
                 />
+                {balanceError && <p className="text-[11px] text-[#AE3B2B] mt-1">{balanceError}</p>}
               </div>
               <p className="text-[11px] text-[#63665C] mt-1">
-                Se informado, o app somará as movimentações do extrato a este valor para exibir o <strong>Saldo Real</strong> da sua conta.
+                Informe o saldo válido no fim da data escolhida abaixo. O app somará apenas as movimentações posteriores a essa data.
               </p>
             </div>
 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-[#63665C] mb-1">
-                Data do Saldo Inicial (Opcional)
+                Data de referência do saldo (Opcional)
               </label>
               <input
                 type="date"
@@ -122,6 +141,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 onChange={(e) => setOpeningDate(e.target.value)}
                 className="w-full px-3 py-2 text-xs bg-[#F5F2E7] border border-[#D6D0BC] rounded-xl font-mono text-[#1E241F] focus:outline-none focus:border-[#1E241F]"
               />
+              <p className="text-[11px] text-[#63665C] mt-1">
+                Sem uma data, o saldo base será combinado com todo o histórico importado.
+              </p>
             </div>
           </div>
 

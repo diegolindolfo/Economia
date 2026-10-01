@@ -20,9 +20,10 @@ import {
   PlusSquare,
   Layers,
 } from 'lucide-react';
-import { CategoryRule, Settings, Transaction, Category } from '../../types';
+import { CategoryRule, Settings, Transaction, Category, ParseResult } from '../../types';
 import { CATEGORIES, CATEGORY_LIST } from '../../lib/categorization/categories';
-import { formatCurrency, formatDateBR } from '../../lib/format';
+import { formatCurrency, formatDateBR, parseLocalizedAmount } from '../../lib/format';
+import { validateBackupPayload } from '../../lib/backup/validateBackup';
 import { CategoryChip } from '../CategoryChip';
 import { SAMPLE_NUBANK_CSV } from '../../data/sampleData';
 import {
@@ -35,7 +36,7 @@ interface ManageMenuViewProps {
   transactions: Transaction[];
   rules: Record<string, CategoryRule>;
   settings: Settings;
-  onImportCSV: (csvContent: string) => void;
+  onImportCSV: (csvContent: string) => ParseResult;
   onSaveSettings: (settings: Settings) => void;
   onDeleteRule: (merchantKey: string) => void;
   onUpdateRuleCategory: (merchantKey: string, newCategory: Category) => void;
@@ -112,6 +113,7 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
   const [csvText, setCsvText] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [importStatusKind, setImportStatusKind] = useState<'success' | 'warning' | 'error' | 'info'>('info');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Settings form state
@@ -122,14 +124,40 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
   );
   const [dateInput, setDateInput] = useState(settings.openingBalanceDate || '');
   const [settingsSaved, setSettingsSaved] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setBalanceInput(settings.openingBalance !== null && settings.openingBalance !== undefined
+      ? String(settings.openingBalance)
+      : '');
+    setDateInput(settings.openingBalanceDate || '');
+    setSettingsError(null);
+  }, [settings.openingBalance, settings.openingBalanceDate]);
 
   // Filter for rules search
   const [rulesSearch, setRulesSearch] = useState('');
 
+  const showImportResult = (result: ParseResult) => {
+    if (result.newCount > 0) {
+      const rowErrors = result.errors.length > 0 ? ` ${result.errors.length} problema(s): ${result.errors[0]}` : '';
+      setImportStatus(`${result.newCount} lançamento(s) importado(s).${rowErrors}`);
+      setImportStatusKind(result.errors.length > 0 ? 'warning' : 'success');
+    } else if (result.duplicateCount > 0) {
+      const rowErrors = result.errors.length > 0 ? ` ${result.errors.length} problema(s): ${result.errors[0]}` : '';
+      setImportStatus(`${result.duplicateCount} lançamento(s) já estavam cadastrados.${rowErrors}`);
+      setImportStatusKind(result.errors.length > 0 ? 'warning' : 'info');
+    } else {
+      setImportStatus(result.errors[0] || 'Nenhum lançamento válido foi encontrado.');
+      setImportStatusKind('error');
+    }
+    setTimeout(() => setImportStatus(null), 6000);
+  };
+
   // Handle file drop/select
   const handleFile = (file: File) => {
-    if (!file.name.endsWith('.csv') && !file.type.includes('csv') && !file.type.includes('text')) {
+    if (!file.name.toLowerCase().endsWith('.csv') && !file.type.includes('csv') && !file.type.includes('text')) {
       setImportStatus('Por favor, selecione um arquivo .csv válido.');
+      setImportStatusKind('error');
       return;
     }
 
@@ -137,9 +165,7 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
     reader.onload = (e) => {
       const content = e.target?.result as string;
       if (content) {
-        onImportCSV(content);
-        setImportStatus('Extrato importado com sucesso!');
-        setTimeout(() => setImportStatus(null), 4000);
+        showImportResult(onImportCSV(content));
       }
     };
     reader.readAsText(file);
@@ -164,17 +190,21 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
 
   const handlePasteSubmit = () => {
     if (!csvText.trim()) return;
-    onImportCSV(csvText);
-    setCsvText('');
-    setImportStatus('Extrato importado a partir do texto colado!');
-    setTimeout(() => setImportStatus(null), 4000);
+    const result = onImportCSV(csvText);
+    if (result.errors.length === 0) setCsvText('');
+    showImportResult(result);
   };
 
   const handleSaveSettingsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = balanceInput.trim() === '' ? null : parseFloat(balanceInput.replace(',', '.'));
+    const parsed = parseLocalizedAmount(balanceInput);
+    if (balanceInput.trim() && parsed === null) {
+      setSettingsError('Informe um saldo válido, como 1.250,50 ou 1250.50.');
+      return;
+    }
+    setSettingsError(null);
     onSaveSettings({
-      openingBalance: parsed !== null && !isNaN(parsed) ? parsed : null,
+      openingBalance: parsed,
       openingBalanceDate: dateInput.trim() || null,
     });
     setSettingsSaved(true);
@@ -206,41 +236,18 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
     reader.onload = (e) => {
       try {
         const text = e.target?.result as string;
-        const parsed = JSON.parse(text);
-
-        let txns: Transaction[] = [];
-        let parsedRules: Record<string, CategoryRule> = {};
-        let parsedSettings: Settings = { openingBalance: null, openingBalanceDate: null };
-        let exportedAt: string | undefined;
-
-        if (Array.isArray(parsed)) {
-          txns = parsed;
-        } else if (parsed && typeof parsed === 'object') {
-          if (Array.isArray(parsed.transactions)) {
-            txns = parsed.transactions;
-          }
-          if (parsed.rules && typeof parsed.rules === 'object') {
-            parsedRules = parsed.rules;
-          }
-          if (parsed.settings && typeof parsed.settings === 'object') {
-            parsedSettings = parsed.settings;
-          }
-          if (parsed.exportedAt) {
-            exportedAt = parsed.exportedAt;
-          }
-        }
-
-        if (txns.length === 0 && Object.keys(parsedRules).length === 0) {
-          setRestoreError('O arquivo JSON não contém transações ou regras válidas.');
+        const result = validateBackupPayload(JSON.parse(text));
+        if (!result.data) {
+          setRestoreError(result.errors.join(' '));
           return;
         }
 
         setRestoreModalData({
-          transactions: txns,
-          rules: parsedRules,
-          settings: parsedSettings,
+          transactions: result.data.transactions,
+          rules: result.data.rules,
+          settings: result.data.settings,
           fileName: file.name,
-          exportedAt,
+          exportedAt: result.data.exportedAt,
         });
       } catch (err) {
         setRestoreError('Erro ao ler o arquivo JSON. Certifique-se de que é um JSON válido.');
@@ -349,8 +356,14 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
           </div>
 
           {importStatus && (
-            <div className="p-3.5 rounded-xl bg-[#2E6B4F]/10 border border-[#2E6B4F]/30 text-[#2E6B4F] text-xs font-semibold flex items-center gap-2">
-              <CheckCircle2 size={16} />
+            <div className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+              importStatusKind === 'success'
+                ? 'bg-[#2E6B4F]/10 border border-[#2E6B4F]/30 text-[#2E6B4F]'
+                : importStatusKind === 'error'
+                ? 'bg-[#C84B31]/10 border border-[#C84B31]/30 text-[#C84B31]'
+                : 'bg-[#B96A28]/10 border border-[#B96A28]/30 text-[#8A4F1E]'
+            }`}>
+              {importStatusKind === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
               <span>{importStatus}</span>
             </div>
           )}
@@ -439,7 +452,7 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
               Configurar Saldo Inicial da Conta
             </h2>
             <p className="text-xs text-[#555C54] mt-0.5">
-              O arquivo CSV do Nubank contém apenas os lançamentos de débito e crédito, sem o saldo absoluto da conta. Configure aqui o saldo real da sua conta no primeiro dia do extrato.
+              Informe o saldo da conta no fim da data de referência. O cálculo soma a esse valor apenas os lançamentos posteriores à data escolhida.
             </p>
           </div>
 
@@ -462,11 +475,16 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
                 <input
                   type="text"
                   value={balanceInput}
-                  onChange={(e) => setBalanceInput(e.target.value)}
-                  placeholder="0.00"
+                  onChange={(e) => {
+                    setBalanceInput(e.target.value);
+                    setSettingsError(null);
+                  }}
+                  placeholder="1.250,50"
+                  aria-invalid={Boolean(settingsError)}
                   className="w-full pl-10 pr-3 py-2.5 rounded-xl bg-[#F5F2E8] border border-[#D3CCA] text-sm font-receipt-mono font-bold text-[#141A15] focus:outline-none focus:ring-2 focus:ring-[#141A15]"
                 />
               </div>
+              {settingsError && <p className="text-[11px] text-[#C84B31] mt-1">{settingsError}</p>}
               <p className="text-[11px] text-[#636A60] mt-1">
                 Deixe em branco para exibir o saldo relativo calculado do extrato.
               </p>
@@ -482,6 +500,9 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
                 onChange={(e) => setDateInput(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-xl bg-[#F5F2E8] border border-[#D3CCA] text-sm text-[#141A15] focus:outline-none focus:ring-2 focus:ring-[#141A15]"
               />
+              <p className="text-[11px] text-[#636A60] mt-1">
+                Sem uma data, todo o histórico será somado ao saldo base.
+              </p>
             </div>
 
             <button
