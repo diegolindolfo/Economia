@@ -260,6 +260,7 @@ export default function App() {
             onOpenSettingsModal={() => setIsSettingsModalOpen(true)}
             onLoadSample={handleLoadSample}
             onOpenFocusMode={() => setIsFocusModeOpen(true)}
+            onSelectCategory={setSelectedCategory}
           />
         )}
 
