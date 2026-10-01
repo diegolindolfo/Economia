@@ -245,6 +245,50 @@ export default function App() {
     });
   }, [transactions, rules, updateTransactions]);
 
+  // Restore JSON backup
+  const handleRestoreBackup = useCallback((backupData: {
+    transactions: Transaction[];
+    rules: Record<string, CategoryRule>;
+    settings: Settings;
+    mode: 'replace' | 'merge';
+  }) => {
+    if (backupData.mode === 'replace') {
+      updateTransactions(backupData.transactions);
+      updateRules(backupData.rules);
+      updateSettings(backupData.settings);
+      setToast({
+        id: String(Date.now()),
+        message: `Backup restaurado com sucesso! (${backupData.transactions.length} lançamentos e ${Object.keys(backupData.rules).length} regras)`,
+        type: 'success',
+      });
+    } else {
+      // Merge mode
+      const existingIds = new Set(transactions.map((t) => t.id));
+      const mergedTxns = [...transactions];
+      let addedCount = 0;
+      backupData.transactions.forEach((t) => {
+        if (!existingIds.has(t.id)) {
+          mergedTxns.push(t);
+          existingIds.add(t.id);
+          addedCount++;
+        }
+      });
+      const mergedRules = { ...rules, ...backupData.rules };
+      const mergedSettings =
+        backupData.settings.openingBalance !== null ? backupData.settings : settings;
+
+      updateTransactions(mergedTxns);
+      updateRules(mergedRules);
+      updateSettings(mergedSettings);
+
+      setToast({
+        id: String(Date.now()),
+        message: `Backup mesclado! +${addedCount} novos lançamentos adicionados e regras atualizadas.`,
+        type: 'success',
+      });
+    }
+  }, [transactions, rules, settings, updateTransactions, updateRules, updateSettings]);
+
   // Clear data
   const handleClearAll = useCallback(() => {
     clearAllData();
@@ -331,6 +375,7 @@ export default function App() {
             onLoadSample={handleLoadSample}
             onClearAllData={handleClearAll}
             onReprocessTransactions={handleReprocessTransactions}
+            onRestoreBackup={handleRestoreBackup}
           />
         )}
       </main>
@@ -358,6 +403,7 @@ export default function App() {
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         onImportCSV={handleImportCSV}
+        onRestoreBackup={handleRestoreBackup}
       />
 
       {/* Settings Modal */}

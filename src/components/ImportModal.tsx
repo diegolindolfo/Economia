@@ -1,24 +1,37 @@
 import React, { useState, useRef } from 'react';
-import { UploadCloud, FileText, X, Sparkles, AlertCircle, CheckCircle2, Copy } from 'lucide-react';
-import { ParseResult } from '../types';
+import { UploadCloud, FileText, X, Sparkles, AlertCircle, CheckCircle2, Database, ArrowRight } from 'lucide-react';
+import { CategoryRule, ParseResult, Settings, Transaction } from '../types';
 import { SAMPLE_NUBANK_CSV } from '../data/sampleData';
 
 interface ImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onImportCSV: (csvString: string) => ParseResult;
+  onRestoreBackup?: (backupData: {
+    transactions: Transaction[];
+    rules: Record<string, CategoryRule>;
+    settings: Settings;
+    mode: 'replace' | 'merge';
+  }) => void;
 }
 
 export const ImportModal: React.FC<ImportModalProps> = ({
   isOpen,
   onClose,
   onImportCSV,
+  onRestoreBackup,
 }) => {
   const [dragActive, setDragActive] = useState(false);
   const [pastedText, setPastedText] = useState('');
   const [activeTab, setActiveTab] = useState<'upload' | 'paste'>('upload');
   const [lastResult, setLastResult] = useState<ParseResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [jsonBackupPreview, setJsonBackupPreview] = useState<{
+    transactions: Transaction[];
+    rules: Record<string, CategoryRule>;
+    settings: Settings;
+    fileName: string;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
@@ -35,12 +48,46 @@ export const ImportModal: React.FC<ImportModalProps> = ({
 
   const processFile = (file: File) => {
     if (!file) return;
+    setErrorMessage(null);
+    setJsonBackupPreview(null);
+
+    const isJson = file.name.toLowerCase().endsWith('.json') || file.type === 'application/json';
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target?.result as string;
-      if (content) {
-        handleParse(content);
+      if (!content) return;
+
+      if (isJson || content.trim().startsWith('{') || content.trim().startsWith('[')) {
+        try {
+          const parsed = JSON.parse(content);
+          let txns: Transaction[] = [];
+          let parsedRules: Record<string, CategoryRule> = {};
+          let parsedSettings: Settings = { openingBalance: null, openingBalanceDate: null };
+
+          if (Array.isArray(parsed)) {
+            txns = parsed;
+          } else if (parsed && typeof parsed === 'object') {
+            if (Array.isArray(parsed.transactions)) txns = parsed.transactions;
+            if (parsed.rules && typeof parsed.rules === 'object') parsedRules = parsed.rules;
+            if (parsed.settings && typeof parsed.settings === 'object') parsedSettings = parsed.settings;
+          }
+
+          if (txns.length > 0 || Object.keys(parsedRules).length > 0) {
+            setJsonBackupPreview({
+              transactions: txns,
+              rules: parsedRules,
+              settings: parsedSettings,
+              fileName: file.name,
+            });
+            return;
+          }
+        } catch (_) {
+          // not json, fallback to csv
+        }
       }
+
+      handleParse(content);
     };
     reader.readAsText(file, 'UTF-8');
   };
@@ -62,13 +109,45 @@ export const ImportModal: React.FC<ImportModalProps> = ({
 
   const handleParse = (csvText: string) => {
     setErrorMessage(null);
+    setJsonBackupPreview(null);
+
+    // Check if pasted text is JSON backup
+    const trimmed = csvText.trim();
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        let txns: Transaction[] = [];
+        let parsedRules: Record<string, CategoryRule> = {};
+        let parsedSettings: Settings = { openingBalance: null, openingBalanceDate: null };
+
+        if (Array.isArray(parsed)) {
+          txns = parsed;
+        } else if (parsed && typeof parsed === 'object') {
+          if (Array.isArray(parsed.transactions)) txns = parsed.transactions;
+          if (parsed.rules && typeof parsed.rules === 'object') parsedRules = parsed.rules;
+          if (parsed.settings && typeof parsed.settings === 'object') parsedSettings = parsed.settings;
+        }
+
+        if (txns.length > 0 || Object.keys(parsedRules).length > 0) {
+          setJsonBackupPreview({
+            transactions: txns,
+            rules: parsedRules,
+            settings: parsedSettings,
+            fileName: 'texto_colado.json',
+          });
+          return;
+        }
+      } catch (_) {
+        // continue as CSV
+      }
+    }
+
     try {
       const result = onImportCSV(csvText);
       setLastResult(result);
       if (result.totalParsed === 0 && result.errors.length > 0) {
         setErrorMessage(result.errors.join(', '));
       } else {
-        // Success
         setTimeout(() => {
           onClose();
           setLastResult(null);
@@ -81,7 +160,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
 
   const handlePasteSubmit = () => {
     if (!pastedText.trim()) {
-      setErrorMessage('Cole o conteúdo do CSV no campo de texto.');
+      setErrorMessage('Cole o conteúdo do CSV ou JSON de backup no campo de texto.');
       return;
     }
     handleParse(pastedText);
@@ -89,6 +168,18 @@ export const ImportModal: React.FC<ImportModalProps> = ({
 
   const handleUseSample = () => {
     handleParse(SAMPLE_NUBANK_CSV);
+  };
+
+  const handleExecuteRestore = (mode: 'replace' | 'merge') => {
+    if (!jsonBackupPreview || !onRestoreBackup) return;
+    onRestoreBackup({
+      transactions: jsonBackupPreview.transactions,
+      rules: jsonBackupPreview.rules,
+      settings: jsonBackupPreview.settings,
+      mode,
+    });
+    setJsonBackupPreview(null);
+    onClose();
   };
 
   return (
@@ -99,39 +190,34 @@ export const ImportModal: React.FC<ImportModalProps> = ({
         onClick={onClose}
       />
 
-      {/* Modal */}
+      {/* Modal Dialog */}
       <div
-        className="relative w-full max-w-lg bg-[#FBF9F2] text-[#1E241F] rounded-2xl shadow-2xl border border-[#D6D0BC] overflow-hidden z-10 animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
+        className="relative w-full max-w-lg bg-[#FBF9F2] text-[#1E241F] rounded-2xl shadow-2xl border border-[#D6D0BC] overflow-hidden z-10 animate-in zoom-in-95 duration-200"
         role="dialog"
+        aria-modal="true"
       >
         {/* Header */}
-        <div className="px-5 py-4 border-b border-[#D6D0BC]/80 bg-[#F5F2E7] flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#1E241F] text-[#FBF9F2] flex items-center justify-center">
-              <UploadCloud size={18} />
-            </div>
-            <div>
-              <h3 className="font-receipt-display text-lg font-bold text-[#1E241F] leading-tight">
-                Importar Extrato CSV Nubank
-              </h3>
-              <span className="text-xs text-[#63665C]">
-                Padrão Data, Valor, Identificador, Descrição
-              </span>
-            </div>
+        <div className="flex items-center justify-between p-5 border-b border-[#D6D0BC]/80 bg-[#F5F2E7]">
+          <div>
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#63665C] block">
+              Entrada de Dados
+            </span>
+            <h3 className="font-receipt-display text-lg sm:text-xl font-bold text-[#1E241F] leading-tight">
+              Importar Extrato Nubank ou Backup
+            </h3>
           </div>
-
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-full text-[#63665C] hover:text-[#1E241F] hover:bg-[#EAE6D9] cursor-pointer"
+            className="p-2 rounded-full text-[#63665C] hover:text-[#1E241F] hover:bg-[#EAE6D9] active:scale-95 transition-all cursor-pointer min-w-[40px] min-h-[40px] flex items-center justify-center"
             aria-label="Fechar"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Tab Selector */}
-        <div className="flex border-b border-[#D6D0BC] bg-[#EAE6D9]/50 px-5 pt-2">
+        {/* Tab Controls */}
+        <div className="flex items-center gap-2 px-5 pt-3 border-b border-[#D6D0BC]/50">
           <button
             type="button"
             onClick={() => setActiveTab('upload')}
@@ -141,7 +227,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 : 'border-transparent text-[#63665C] hover:text-[#1E241F]'
             }`}
           >
-            Arquivo CSV
+            Arquivo CSV ou JSON
           </button>
           <button
             type="button"
@@ -157,7 +243,45 @@ export const ImportModal: React.FC<ImportModalProps> = ({
         </div>
 
         {/* Body */}
-        <div className="p-5 overflow-y-auto space-y-4">
+        <div className="p-5 overflow-y-auto space-y-4 max-h-[75vh]">
+          {/* JSON Backup Detected Dialog */}
+          {jsonBackupPreview && (
+            <div className="p-4 rounded-xl bg-[#1E241F] text-[#FAF8F2] border border-[#3A463B] space-y-3 animate-in fade-in">
+              <div className="flex items-center gap-2 text-sm font-bold text-[#8FB397]">
+                <Database size={17} />
+                <span>Arquivo de Backup JSON Detectado!</span>
+              </div>
+              <p className="text-xs text-[#C9C4B5] leading-relaxed">
+                Este arquivo <strong>{jsonBackupPreview.fileName}</strong> contém{' '}
+                <strong className="text-white">{jsonBackupPreview.transactions.length} lançamentos</strong> e{' '}
+                <strong className="text-white">{Object.keys(jsonBackupPreview.rules).length} regras</strong> de categorização.
+              </p>
+              <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleExecuteRestore('replace')}
+                  className="flex-1 py-2 px-3 rounded-lg bg-[#2E6B4F] hover:bg-[#255740] text-white font-bold text-xs transition-colors cursor-pointer text-center"
+                >
+                  Restaurar Tudo (Substituir)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExecuteRestore('merge')}
+                  className="flex-1 py-2 px-3 rounded-lg bg-[#2A352C] hover:bg-[#38483B] text-[#D8D4C5] font-semibold text-xs border border-[#445547] transition-colors cursor-pointer text-center"
+                >
+                  Mesclar com Atuais
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setJsonBackupPreview(null)}
+                  className="py-2 px-3 rounded-lg text-xs text-[#8E9B90] hover:text-white transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Feedback states */}
           {errorMessage && (
             <div className="p-3 rounded-xl bg-[#AE3B2B]/10 border border-[#AE3B2B]/30 flex items-start gap-2.5 text-xs text-[#AE3B2B]">
@@ -200,7 +324,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".csv,text/csv,text/plain"
+                  accept=".csv,.json,text/csv,application/json,text/plain"
                   onChange={handleFileChange}
                   className="hidden"
                 />
@@ -209,64 +333,48 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                 </div>
                 <div>
                   <p className="text-sm font-bold text-[#1E241F]">
-                    Clique para selecionar ou arraste o arquivo CSV
+                    Clique para selecionar ou arraste seu arquivo
                   </p>
-                  <p className="text-xs text-[#63665C] mt-1">
-                    Exportado direto do app ou site do Nubank
+                  <p className="text-xs text-[#63665C] mt-0.5">
+                    Extrato CSV do Nubank ou arquivo JSON de backup
                   </p>
                 </div>
               </div>
             </div>
           ) : (
-            <div>
-              <label className="block text-xs font-semibold text-[#63665C] uppercase tracking-wider mb-1.5">
-                Cole as linhas do extrato CSV:
+            <div className="space-y-3">
+              <label className="block text-xs font-semibold text-[#63665C]">
+                Cole o conteúdo do arquivo CSV ou JSON de backup:
               </label>
               <textarea
+                rows={6}
                 value={pastedText}
                 onChange={(e) => setPastedText(e.target.value)}
-                placeholder={`Data,Valor,Identificador,Descrição\n01/08/2026,8040.90,uuid-1,Transferência recebida pelo Pix...\n01/08/2026,-1330.00,uuid-2,Aplicação RDB`}
-                rows={7}
-                className="w-full p-3 font-mono text-xs bg-[#F5F2E7] border border-[#D6D0BC] rounded-xl text-[#1E241F] focus:outline-none focus:border-[#1E241F] focus:ring-1 focus:ring-[#1E241F]/30"
+                placeholder="Data,Valor,Identificador,Descrição&#10;15/08/2026,-98.50,6a6dcab1...,RESTAURANTE COCO BAMBU&#10;ou cole o JSON de backup {...}"
+                className="w-full p-3 rounded-xl bg-[#F5F2E7] border border-[#D6D0BC] text-xs font-mono text-[#1E241F] focus:outline-none focus:ring-2 focus:ring-[#1E241F] resize-none"
               />
               <button
                 type="button"
                 onClick={handlePasteSubmit}
-                className="mt-2 w-full py-2.5 bg-[#1E241F] text-[#FBF9F2] rounded-xl font-semibold text-xs hover:bg-[#2A332B] transition-all cursor-pointer"
+                className="w-full py-2.5 rounded-xl bg-[#1E241F] hover:bg-[#2C362E] text-[#FBF9F2] font-bold text-xs transition-colors cursor-pointer min-h-[40px]"
               >
-                Processar Texto Colado
+                Processar e Importar
               </button>
             </div>
           )}
 
-          {/* Quick sample button */}
-          <div className="p-3.5 rounded-xl bg-[#EAE6D9]/70 border border-[#D6D0BC] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-            <div className="flex items-center gap-2">
-              <Sparkles size={16} className="text-[#B96A28] shrink-0" />
-              <div className="text-xs text-[#1E241F]">
-                <span className="font-semibold">Não tem um CSV agora?</span> Teste instantaneamente com dados realistas.
-              </div>
-            </div>
+          {/* Sample data shortcut */}
+          <div className="pt-2 border-t border-[#D6D0BC]/60 flex items-center justify-between text-xs text-[#63665C]">
+            <span>Quer apenas testar?</span>
             <button
               type="button"
               onClick={handleUseSample}
-              className="px-3 py-1.5 rounded-lg bg-[#FBF9F2] hover:bg-[#EAE6D9] text-[#1E241F] font-semibold text-xs border border-[#D6D0BC] shrink-0 cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-1 font-bold text-[#B96A28] hover:underline cursor-pointer"
             >
-              Usar Exemplo
+              <Sparkles size={13} />
+              <span>Usar Extrato de Exemplo</span>
             </button>
           </div>
-        </div>
-
-        {/* Footer info */}
-        <div className="px-5 py-3 border-t border-[#D6D0BC] bg-[#F5F2E7] text-[11px] text-[#63665C] flex items-center justify-between">
-          <span>🔒 Todos os dados ficam 100% salvos no seu navegador.</span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="font-semibold text-[#1E241F] hover:underline cursor-pointer"
-          >
-            Fechar
-          </button>
         </div>
       </div>
     </div>

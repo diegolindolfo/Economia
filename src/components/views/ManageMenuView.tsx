@@ -6,6 +6,7 @@ import {
   Bookmark,
   Trash2,
   Download,
+  Upload,
   AlertTriangle,
   Sparkles,
   CheckCircle2,
@@ -41,6 +42,12 @@ interface ManageMenuViewProps {
   onLoadSample: () => void;
   onClearAllData: () => void;
   onReprocessTransactions?: () => void;
+  onRestoreBackup?: (backupData: {
+    transactions: Transaction[];
+    rules: Record<string, CategoryRule>;
+    settings: Settings;
+    mode: 'replace' | 'merge';
+  }) => void;
 }
 
 export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
@@ -54,9 +61,21 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
   onLoadSample,
   onClearAllData,
   onReprocessTransactions,
+  onRestoreBackup,
 }) => {
   // Tabs inside Menu: 'import' | 'settings' | 'rules' | 'backup'
   const [activeSection, setActiveSection] = useState<'import' | 'settings' | 'rules' | 'backup'>('import');
+
+  // JSON Restore state
+  const [restoreModalData, setRestoreModalData] = useState<{
+    transactions: Transaction[];
+    rules: Record<string, CategoryRule>;
+    settings: Settings;
+    fileName: string;
+    exportedAt?: string;
+  } | null>(null);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
+  const jsonFileInputRef = useRef<HTMLInputElement>(null);
 
   // PWA Install state
   const [canInstallPWA, setCanInstallPWA] = useState(false);
@@ -177,6 +196,68 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
     a.download = `extrato-gestao-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  // Handle JSON file selection for Restore
+  const handleJsonFileSelected = (file: File) => {
+    setRestoreError(null);
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        const parsed = JSON.parse(text);
+
+        let txns: Transaction[] = [];
+        let parsedRules: Record<string, CategoryRule> = {};
+        let parsedSettings: Settings = { openingBalance: null, openingBalanceDate: null };
+        let exportedAt: string | undefined;
+
+        if (Array.isArray(parsed)) {
+          txns = parsed;
+        } else if (parsed && typeof parsed === 'object') {
+          if (Array.isArray(parsed.transactions)) {
+            txns = parsed.transactions;
+          }
+          if (parsed.rules && typeof parsed.rules === 'object') {
+            parsedRules = parsed.rules;
+          }
+          if (parsed.settings && typeof parsed.settings === 'object') {
+            parsedSettings = parsed.settings;
+          }
+          if (parsed.exportedAt) {
+            exportedAt = parsed.exportedAt;
+          }
+        }
+
+        if (txns.length === 0 && Object.keys(parsedRules).length === 0) {
+          setRestoreError('O arquivo JSON não contém transações ou regras válidas.');
+          return;
+        }
+
+        setRestoreModalData({
+          transactions: txns,
+          rules: parsedRules,
+          settings: parsedSettings,
+          fileName: file.name,
+          exportedAt,
+        });
+      } catch (err) {
+        setRestoreError('Erro ao ler o arquivo JSON. Certifique-se de que é um JSON válido.');
+      }
+    };
+    reader.readAsText(file, 'UTF-8');
+  };
+
+  const handleConfirmRestore = (mode: 'replace' | 'merge') => {
+    if (!restoreModalData || !onRestoreBackup) return;
+    onRestoreBackup({
+      transactions: restoreModalData.transactions,
+      rules: restoreModalData.rules,
+      settings: restoreModalData.settings,
+      mode,
+    });
+    setRestoreModalData(null);
   };
 
   // Filter rules
@@ -557,7 +638,127 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Restore Error Banner */}
+          {restoreError && (
+            <div className="p-3.5 rounded-xl bg-[#C84B31]/10 border border-[#C84B31]/30 text-[#C84B31] text-xs font-semibold flex items-center gap-2">
+              <AlertTriangle size={16} />
+              <span>{restoreError}</span>
+            </div>
+          )}
+
+          {/* Restore Confirmation Preview Card */}
+          {restoreModalData && (
+            <div className="p-4 sm:p-5 rounded-2xl bg-[#141A15] text-[#FAF8F2] border border-[#2D3930] shadow-md space-y-4 animate-in fade-in duration-200">
+              <div className="flex items-start justify-between gap-3 pb-3 border-b border-[#2C382E]">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-[#2E6B4F]/30 text-[#A7D7BC] flex items-center justify-center border border-[#2E6B4F]/40">
+                    <Upload size={17} />
+                  </div>
+                  <div>
+                    <h3 className="font-receipt-display font-bold text-base text-white">
+                      Confirmar Restauração de Backup
+                    </h3>
+                    <p className="text-xs text-[#A2ADA5]">
+                      Arquivo: <span className="font-mono text-[#D8D4C5] font-semibold">{restoreModalData.fileName}</span>
+                      {restoreModalData.exportedAt && (
+                        <span> · Exportado em {formatDateBR(restoreModalData.exportedAt.slice(0, 10))}</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setRestoreModalData(null)}
+                  className="text-xs text-[#A2ADA5] hover:text-white px-2 py-1 rounded hover:bg-[#253027] cursor-pointer"
+                >
+                  Cancelar
+                </button>
+              </div>
+
+              {/* Data summary pills */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3 rounded-xl bg-[#1D251F] border border-[#2E3A30]">
+                  <span className="text-[10px] uppercase font-mono font-bold text-[#8E9B90] block">
+                    Transações a Restaurar
+                  </span>
+                  <div className="font-receipt-mono text-xl font-bold text-[#FAF8F2] mt-0.5">
+                    {restoreModalData.transactions.length}
+                  </div>
+                  <span className="text-[10px] text-[#A2ADA5]">lançamentos financeiros</span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#1D251F] border border-[#2E3A30]">
+                  <span className="text-[10px] uppercase font-mono font-bold text-[#8E9B90] block">
+                    Regras de Categorização
+                  </span>
+                  <div className="font-receipt-mono text-xl font-bold text-[#FAF8F2] mt-0.5">
+                    {Object.keys(restoreModalData.rules).length}
+                  </div>
+                  <span className="text-[10px] text-[#A2ADA5]">estabelecimentos aprendidos</span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#1D251F] border border-[#2E3A30]">
+                  <span className="text-[10px] uppercase font-mono font-bold text-[#8E9B90] block">
+                    Saldo Inicial
+                  </span>
+                  <div className="font-receipt-mono text-xl font-bold text-[#FAF8F2] mt-0.5">
+                    {restoreModalData.settings.openingBalance !== null
+                      ? formatCurrency(restoreModalData.settings.openingBalance)
+                      : 'Não configurado'}
+                  </div>
+                  <span className="text-[10px] text-[#A2ADA5]">
+                    {restoreModalData.settings.openingBalanceDate
+                      ? `Ref: ${formatDateBR(restoreModalData.settings.openingBalanceDate)}`
+                      : 'Calculado do extrato'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleConfirmRestore('replace')}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#2E6B4F] hover:bg-[#255740] text-white font-bold text-xs shadow-sm transition-colors cursor-pointer text-center"
+                >
+                  Substituir Dados Atuais (Recomendado)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleConfirmRestore('merge')}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#242D26] hover:bg-[#303D33] text-[#D8D4C5] font-semibold text-xs border border-[#3C4D3F] transition-colors cursor-pointer text-center"
+                >
+                  Mesclar com Dados Atuais (Sem duplicar)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setRestoreModalData(null)}
+                  className="py-2.5 px-4 rounded-xl bg-transparent hover:bg-[#222A23] text-[#A2ADA5] font-semibold text-xs transition-colors cursor-pointer text-center"
+                >
+                  Voltar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Hidden JSON file input */}
+          <input
+            ref={jsonFileInputRef}
+            type="file"
+            accept=".json,application/json,text/plain"
+            onChange={(e) => {
+              if (e.target.files && e.target.files[0]) {
+                handleJsonFileSelected(e.target.files[0]);
+                e.target.value = '';
+              }
+            }}
+            className="hidden"
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Export Backup Card */}
             <div className="p-4 rounded-xl bg-[#F5F2E8] border border-[#D3CCA] flex flex-col justify-between">
               <div>
@@ -565,7 +766,7 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
                   <Download size={16} />
                   <span>Exportar Backup (JSON)</span>
                 </div>
-                <p className="text-xs text-[#555C54] mt-1.5">
+                <p className="text-xs text-[#555C54] mt-1.5 leading-relaxed">
                   Baixe um arquivo contendo todas as {transactions.length} transações, {rulesList.length} regras de categorização e configurações.
                 </p>
               </div>
@@ -574,7 +775,27 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
                 onClick={handleExportBackup}
                 className="mt-4 w-full py-2 rounded-xl bg-[#141A15] hover:bg-[#253027] text-[#FAF8F2] font-bold text-xs shadow-xs transition-colors cursor-pointer"
               >
-                Baixar Arquivo de Backup
+                Baixar Arquivo JSON
+              </button>
+            </div>
+
+            {/* Restore Backup Card */}
+            <div className="p-4 rounded-xl bg-[#F5F2E8] border border-[#D3CCA] flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-bold text-[#1F6672]">
+                  <Upload size={16} />
+                  <span>Restaurar Backup (JSON)</span>
+                </div>
+                <p className="text-xs text-[#555C54] mt-1.5 leading-relaxed">
+                  Carregue um arquivo JSON baixado anteriormente para recuperar extratos, regras aprendidas e saldos.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => jsonFileInputRef.current?.click()}
+                className="mt-4 w-full py-2 rounded-xl bg-[#1F6672] hover:bg-[#184F58] text-[#FAF8F2] font-bold text-xs shadow-xs transition-colors cursor-pointer"
+              >
+                Selecionar Arquivo JSON
               </button>
             </div>
 
@@ -585,7 +806,7 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
                   <AlertTriangle size={16} />
                   <span>Limpar Dados Locais</span>
                 </div>
-                <p className="text-xs text-[#555C54] mt-1.5">
+                <p className="text-xs text-[#555C54] mt-1.5 leading-relaxed">
                   Apaga todas as transações importadas, regras aprendidas e saldo configurado deste dispositivo.
                 </p>
               </div>
