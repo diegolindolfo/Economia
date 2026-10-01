@@ -85,7 +85,7 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({
             <PieChart size={16} />
           </div>
           <div>
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#63665C] block">
+            <span className="text-xs uppercase tracking-wider font-semibold text-[#555C54] block">
               Distribuição
             </span>
             <h3 className="font-receipt-display text-base sm:text-lg font-bold text-[#1E241F] leading-tight">
@@ -124,7 +124,7 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({
                 />
               ))}
           </div>
-          <div className="flex justify-between items-center text-[11px] text-[#63665C] mt-1.5 font-mono">
+          <div className="flex justify-between items-center text-xs text-[#555C54] mt-1.5 font-mono">
             <span>Total de saídas analisadas:</span>
             <span className="font-bold text-[#1E241F]">{formatCurrency(totalExpenses)}</span>
           </div>
@@ -163,7 +163,7 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({
                   <span className="text-xs sm:text-sm font-semibold text-[#1E241F] truncate">
                     {cat.label}
                   </span>
-                  <span className="text-[10px] text-[#63665C] font-mono">
+                  <span className="hidden sm:inline text-xs text-[#555C54] font-mono">
                     ({cat.count} {cat.count === 1 ? 'item' : 'itens'})
                   </span>
                 </div>
@@ -174,7 +174,7 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({
                       {formatCurrency(cat.total)}
                     </div>
                   </div>
-                  <div className="w-10 text-right text-[11px] font-mono text-[#63665C]">
+                  <div className="w-10 text-right text-xs font-mono text-[#555C54]">
                     {formatPercent(cat.percent)}
                   </div>
                   <div className="w-4 flex justify-center text-[#63665C]">

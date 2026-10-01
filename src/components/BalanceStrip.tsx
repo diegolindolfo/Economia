@@ -2,6 +2,7 @@ import React from 'react';
 import { UploadCloud, PlusCircle, Calendar, Sparkles, SlidersHorizontal, ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { Settings, Transaction } from '../types';
 import { formatCurrency, formatDateBR } from '../lib/format';
+import { calculateAccountBalance } from '../lib/finance/balance';
 
 interface BalanceStripProps {
   transactions: Transaction[];
@@ -20,7 +21,6 @@ export const BalanceStrip: React.FC<BalanceStripProps> = ({
 }) => {
   // Calculate period dates
   let dateRangeText = 'Nenhum extrato importado';
-  let totalNet = 0;
   let totalIncomes = 0;
   let totalExpenses = 0;
 
@@ -31,7 +31,6 @@ export const BalanceStrip: React.FC<BalanceStripProps> = ({
     dateRangeText = `${formatDateBR(minDate)} a ${formatDateBR(maxDate)}`;
 
     transactions.forEach((t) => {
-      totalNet += t.valor;
       if (t.valor > 0) totalIncomes += t.valor;
       else totalExpenses += Math.abs(t.valor);
     });
@@ -41,10 +40,7 @@ export const BalanceStrip: React.FC<BalanceStripProps> = ({
   const hasOpeningBalance = settings.openingBalance !== null && settings.openingBalance !== undefined;
   
   // If opening balance exists, calculate real balance
-  let displayBalance = totalNet;
-  if (hasOpeningBalance) {
-    displayBalance = (settings.openingBalance || 0) + totalNet;
-  }
+  const displayBalance = calculateAccountBalance(transactions, settings);
 
   return (
     <div className="w-full bg-[#1E241F] text-[#FBF9F2] shadow-lg relative">

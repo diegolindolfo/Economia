@@ -294,7 +294,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
         {/* Frequent Merchants Quick Filters (Chips de 1 clique) */}
         {topMerchants.length > 0 && (
           <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none text-xs">
-            <span className="text-[11px] text-[#63665C] font-semibold shrink-0 mr-0.5">
+            <span className="text-xs text-[#555C54] font-semibold shrink-0 mr-0.5">
               Mais frequentes:
             </span>
             {topMerchants.map(({ name, count }) => {
@@ -313,7 +313,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                 >
                   <span>{name}</span>
                   <span
-                    className={`text-[10px] font-mono px-1 rounded-full ${
+                    className={`text-[11px] font-mono px-1 rounded-full ${
                       isActive ? 'bg-[#38433A] text-white' : 'bg-[#D6D0BC] text-[#63665C]'
                     }`}
                   >
@@ -382,7 +382,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                       "{searchQuery}"
                     </span>
                   </div>
-                  <span className="text-[11px] text-[#63665C]">
+                  <span className="text-xs text-[#555C54]">
                     {filterStats.totalCount}{' '}
                     {filterStats.totalCount === 1 ? 'lançamento encontrado' : 'lançamentos encontrados'}
                     {selectedMonth !== 'all'
@@ -407,56 +407,56 @@ export const TransactionList: React.FC<TransactionListProps> = ({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3">
               {/* Total Gastos */}
               <div className="p-2.5 rounded-xl bg-[#F5F2E7] border border-[#D6D0BC]">
-                <span className="text-[10px] font-mono font-bold uppercase block text-[#AE3B2B]">
+                <span className="text-xs font-mono font-bold uppercase block text-[#AE3B2B]">
                   Total Gasto
                 </span>
                 <div className="font-receipt-mono text-lg sm:text-xl font-bold text-[#AE3B2B] mt-0.5">
                   {formatCurrency(filterStats.expenses)}
                 </div>
-                <span className="text-[10px] text-[#63665C]">
+                <span className="text-xs text-[#555C54]">
                   {filterStats.expenseCount} {filterStats.expenseCount === 1 ? 'saída' : 'saídas'}
                 </span>
               </div>
 
               {/* Gasto Médio */}
               <div className="p-2.5 rounded-xl bg-[#F5F2E7] border border-[#D6D0BC]">
-                <span className="text-[10px] font-mono font-bold uppercase block text-[#63665C]">
+                <span className="text-xs font-mono font-bold uppercase block text-[#555C54]">
                   Ticket Médio
                 </span>
                 <div className="font-receipt-mono text-lg sm:text-xl font-bold text-[#1E241F] mt-0.5">
                   {filterStats.expenseCount > 0 ? formatCurrency(filterStats.avgExpense) : 'R$ 0,00'}
                 </div>
-                <span className="text-[10px] text-[#63665C]">por lançamento</span>
+                <span className="text-xs text-[#555C54]">por lançamento</span>
               </div>
 
               {/* Entradas / Reembolsos se houver */}
               {filterStats.incomes > 0 ? (
                 <div className="p-2.5 rounded-xl bg-[#F5F2E7] border border-[#D6D0BC]">
-                  <span className="text-[10px] font-mono font-bold uppercase block text-[#2E6B4F]">
+                  <span className="text-xs font-mono font-bold uppercase block text-[#2E6B4F]">
                     Entradas / Estornos
                   </span>
                   <div className="font-receipt-mono text-lg sm:text-xl font-bold text-[#2E6B4F] mt-0.5">
                     +{formatCurrency(filterStats.incomes)}
                   </div>
-                  <span className="text-[10px] text-[#63665C]">
+                  <span className="text-xs text-[#555C54]">
                     {filterStats.incomeCount} {filterStats.incomeCount === 1 ? 'crédito' : 'créditos'}
                   </span>
                 </div>
               ) : (
                 <div className="p-2.5 rounded-xl bg-[#F5F2E7] border border-[#D6D0BC]">
-                  <span className="text-[10px] font-mono font-bold uppercase block text-[#63665C]">
+                  <span className="text-xs font-mono font-bold uppercase block text-[#555C54]">
                     Lançamentos
                   </span>
                   <div className="font-receipt-mono text-lg sm:text-xl font-bold text-[#1E241F] mt-0.5">
                     {filterStats.totalCount}
                   </div>
-                  <span className="text-[10px] text-[#63665C]">no filtro ativo</span>
+                  <span className="text-xs text-[#555C54]">no filtro ativo</span>
                 </div>
               )}
 
               {/* Saldo Líquido do Filtro */}
               <div className="p-2.5 rounded-xl bg-[#F5F2E7] border border-[#D6D0BC]">
-                <span className="text-[10px] font-mono font-bold uppercase block text-[#63665C]">
+                <span className="text-xs font-mono font-bold uppercase block text-[#555C54]">
                   Balanço Líquido
                 </span>
                 <div
@@ -466,7 +466,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                 >
                   {formatCurrency(filterStats.net, true)}
                 </div>
-                <span className="text-[10px] text-[#63665C]">deste estabelecimento</span>
+                <span className="text-xs text-[#555C54]">deste estabelecimento</span>
               </div>
             </div>
 
@@ -514,7 +514,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                 <span className="text-xs font-bold text-[#1E241F] tracking-tight font-receipt-display">
                   {getRelativeDayLabel(group.date)}
                 </span>
-                <span className="text-[11px] font-mono text-[#63665C]">
+                <span className="text-xs font-mono text-[#555C54]">
                   {formatCurrency(group.totalDay, true)}
                 </span>
               </div>
@@ -572,7 +572,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
                               {txn.categorySource === 'regra' && (
                                 <span
-                                  className="text-[9px] px-1 py-0.2 rounded bg-[#EAE6D9] text-[#63665C] border border-[#D6D0BC] font-mono shrink-0"
+                                  className="text-[11px] px-1.5 py-0.5 rounded bg-[#EAE6D9] text-[#555C54] border border-[#D6D0BC] font-mono shrink-0"
                                   title="Categorizado por regra aprendida"
                                 >
                                   regra
@@ -582,7 +582,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
                             {/* Original Description (click to expand) */}
                             <div
-                              className="text-[11px] text-[#63665C] truncate font-mono mt-0.5 cursor-pointer hover:text-[#1E241F]"
+                              className="text-xs text-[#555C54] truncate font-mono mt-0.5 cursor-pointer hover:text-[#1E241F]"
                               onClick={() => toggleExpand(txn.id)}
                               title="Clique para ver detalhes do lançamento"
                             >
@@ -617,10 +617,10 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                       {/* Expanded Details Drawer */}
                       {isExpanded && (
                         <div className="mt-2.5 pt-2.5 border-t border-[#D6D0BC]/50 bg-[#EAE6D9]/40 p-2.5 rounded-lg text-xs space-y-1.5 animate-in fade-in duration-150">
-                          <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] text-[#63665C]">
+                              <div className="flex flex-wrap items-center justify-between gap-1 text-xs text-[#555C54]">
                             <span>
                               Identificador Nubank:{' '}
-                              <code className="font-mono bg-[#FBF9F2] px-1 py-0.5 rounded text-[10px]">
+                              <code className="font-mono bg-[#FBF9F2] px-1 py-0.5 rounded text-[11px]">
                                 {txn.id}
                               </code>
                             </span>
@@ -629,12 +629,12 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                             </span>
                           </div>
 
-                          <div className="text-[11px] text-[#1E241F]">
+                          <div className="text-xs text-[#1E241F]">
                             <strong>Descrição Original:</strong> {txn.desc}
                           </div>
 
                           <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[#D6D0BC]/50">
-                            <div className="text-[11px] text-[#63665C]">
+                            <div className="text-xs text-[#555C54]">
                               Chave: <code className="font-mono">{txn.merchantKey}</code> ({txn.categorySource})
                             </div>
                             <div className="flex items-center gap-1.5 flex-wrap">

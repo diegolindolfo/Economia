@@ -6,15 +6,20 @@ import { CategoryChip } from './CategoryChip';
 
 interface InvestmentsPanelProps {
   transactions: Transaction[];
+  selectedMonth: string;
   onOpenCategorySheet: (txn: Transaction) => void;
 }
 
 export const InvestmentsPanel: React.FC<InvestmentsPanelProps> = ({
   transactions,
+  selectedMonth,
   onOpenCategorySheet,
 }) => {
-  // Filter investment transactions
-  const investmentTransactions = transactions.filter((t) => t.category === 'investimento');
+  // Keep the period selector consistent with the movements and flow metrics below.
+  const investmentTransactions = transactions.filter((t) =>
+    t.category === 'investimento' &&
+    (selectedMonth === 'all' || t.date.startsWith(selectedMonth))
+  );
 
   let totalApplied = 0; // Aplicações (outflows into RDB)
   let totalRedeemed = 0; // Resgates (inflows back)
@@ -40,11 +45,11 @@ export const InvestmentsPanel: React.FC<InvestmentsPanelProps> = ({
             <TrendingUp size={16} />
           </div>
           <div>
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#63665C] block">
-              Patrimônio & Reservas
+            <span className="text-xs uppercase tracking-wider font-semibold text-[#555C54] block">
+              Fluxo de investimentos
             </span>
             <h3 className="font-receipt-display text-base sm:text-lg font-bold text-[#1E241F] leading-tight">
-              Investimentos (RDB / Caixinhas)
+              Aportes e resgates (RDB / Caixinhas)
             </h3>
           </div>
         </div>
@@ -65,7 +70,7 @@ export const InvestmentsPanel: React.FC<InvestmentsPanelProps> = ({
           <div className="font-receipt-mono text-lg font-bold text-[#1F6672]">
             {formatCurrency(totalApplied)}
           </div>
-          <span className="text-[10px] text-[#63665C]">Transferido para o RDB</span>
+          <span className="text-xs text-[#555C54]">Transferido para o RDB</span>
         </div>
 
         <div className="p-3 rounded-xl bg-[#EAE6D9]/50 border border-[#D6D0BC]/60">
@@ -76,7 +81,7 @@ export const InvestmentsPanel: React.FC<InvestmentsPanelProps> = ({
           <div className="font-receipt-mono text-lg font-bold text-[#2E6B4F]">
             {formatCurrency(totalRedeemed)}
           </div>
-          <span className="text-[10px] text-[#63665C]">Retornado para conta corrente</span>
+          <span className="text-xs text-[#555C54]">Retornado para conta corrente</span>
         </div>
 
         <div className="p-3 rounded-xl bg-[#EAE6D9]/50 border border-[#D6D0BC]/60">
@@ -87,20 +92,20 @@ export const InvestmentsPanel: React.FC<InvestmentsPanelProps> = ({
           <div className="font-receipt-mono text-lg font-bold text-[#1E241F]">
             {formatCurrency(netInvested, true)}
           </div>
-          <span className="text-[10px] text-[#63665C]">Variação líquida de reserva</span>
+          <span className="text-xs text-[#555C54]">Variação líquida de reserva</span>
         </div>
       </div>
 
       {/* Investment Transactions List */}
       <div>
         <div className="text-xs font-semibold uppercase tracking-wider text-[#63665C] mb-2 flex items-center justify-between">
-          <span>Movimentações de Investimento ({investmentTransactions.length})</span>
-          <span className="text-[10px] text-[#63665C]">Auto-detectado por RDB/Investimento</span>
+          <span>Movimentações do período ({investmentTransactions.length})</span>
+          <span className="text-xs text-[#555C54]">Auto-detectado por RDB/Investimento</span>
         </div>
 
         {investmentTransactions.length === 0 ? (
           <div className="py-5 text-center bg-[#EAE6D9]/30 rounded-xl border border-dashed border-[#D6D0BC] text-xs text-[#63665C]">
-            Nenhuma aplicação ou resgate RDB identificado neste extrato.
+            Nenhuma aplicação ou resgate RDB identificado neste período.
           </div>
         ) : (
           <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
@@ -123,7 +128,7 @@ export const InvestmentsPanel: React.FC<InvestmentsPanelProps> = ({
                       <div className="text-xs sm:text-sm font-semibold text-[#1E241F] truncate">
                         {txn.desc}
                       </div>
-                      <div className="text-[10px] text-[#63665C] font-mono">
+                      <div className="text-xs text-[#555C54] font-mono">
                         {formatDateBR(txn.date)}
                       </div>
                     </div>

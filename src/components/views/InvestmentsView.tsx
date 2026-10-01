@@ -28,6 +28,7 @@ export const InvestmentsView: React.FC<InvestmentsViewProps> = ({
       {/* Investments Dedicated Panel */}
       <InvestmentsPanel
         transactions={transactions}
+        selectedMonth={selectedMonth}
         onOpenCategorySheet={onOpenCategorySheet}
       />
     </div>

@@ -24,42 +24,50 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
   }
 
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none py-1">
-      <div className="flex items-center gap-1 text-xs text-[#63665C] font-semibold uppercase tracking-wider mr-1 shrink-0">
-        <Calendar size={13} />
+    <div className="flex flex-col gap-1.5 py-1 sm:flex-row sm:items-center sm:gap-2">
+      <div className="flex items-center gap-1 text-xs sm:text-sm text-[#555C54] font-semibold uppercase tracking-wider shrink-0">
+        <Calendar size={14} aria-hidden="true" />
         <span>Mês:</span>
       </div>
 
-      <button
-        type="button"
-        onClick={() => onSelectMonth('all')}
-        className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer min-h-[32px] border ${
-          selectedMonth === 'all'
-            ? 'bg-[#1E241F] text-[#FBF9F2] border-[#1E241F] shadow-xs'
-            : 'bg-[#FBF9F2] text-[#63665C] border-[#D6D0BC] hover:border-[#1E241F]/40'
-        }`}
+      <div
+        role="group"
+        aria-label="Filtrar lançamentos por período"
+        className="flex min-w-0 gap-2 overflow-x-auto pb-1 scrollbar-none"
       >
-        Todo o Extrato ({transactions.length})
-      </button>
+        <button
+          type="button"
+          aria-pressed={selectedMonth === 'all'}
+          onClick={() => onSelectMonth('all')}
+          className={`px-3 py-1 rounded-full text-sm font-semibold whitespace-nowrap transition-all cursor-pointer min-h-[40px] border ${
+            selectedMonth === 'all'
+              ? 'bg-[#1E241F] text-[#FBF9F2] border-[#1E241F] shadow-xs'
+              : 'bg-[#FBF9F2] text-[#555C54] border-[#D6D0BC] hover:border-[#1E241F]/40'
+          }`}
+        >
+          Todo o Extrato ({transactions.length})
+        </button>
 
-      {months.map((m) => {
-        const count = transactions.filter((t) => t.date.startsWith(m)).length;
-        const isSelected = selectedMonth === m;
-        return (
-          <button
-            key={m}
-            type="button"
-            onClick={() => onSelectMonth(m)}
-            className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer min-h-[32px] border ${
-              isSelected
-                ? 'bg-[#1E241F] text-[#FBF9F2] border-[#1E241F] shadow-xs'
-                : 'bg-[#FBF9F2] text-[#63665C] border-[#D6D0BC] hover:border-[#1E241F]/40'
-            }`}
-          >
-            {formatShortMonth(m)} ({count})
-          </button>
-        );
-      })}
+        {months.map((m) => {
+          const count = transactions.filter((t) => t.date.startsWith(m)).length;
+          const isSelected = selectedMonth === m;
+          return (
+            <button
+              key={m}
+              type="button"
+              aria-pressed={isSelected}
+              onClick={() => onSelectMonth(m)}
+              className={`px-3 py-1 rounded-full text-sm font-semibold whitespace-nowrap transition-all cursor-pointer min-h-[40px] border ${
+                isSelected
+                  ? 'bg-[#1E241F] text-[#FBF9F2] border-[#1E241F] shadow-xs'
+                  : 'bg-[#FBF9F2] text-[#555C54] border-[#D6D0BC] hover:border-[#1E241F]/40'
+              }`}
+            >
+              {formatShortMonth(m)} ({count})
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 };

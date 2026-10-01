@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { UploadCloud, FileText, X, Sparkles, AlertCircle, CheckCircle2, Database, ArrowRight } from 'lucide-react';
 import { CategoryRule, ParseResult, Settings, Transaction } from '../types';
 import { SAMPLE_NUBANK_CSV } from '../data/sampleData';
+import { validateBackupPayload } from '../lib/backup/validateBackup';
 
 interface ImportModalProps {
   isOpen: boolean;
@@ -33,6 +34,73 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     fileName: string;
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const previouslyFocused = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    const dialog = dialogRef.current;
+    const focusableSelector = [
+      'a[href]',
+      'button:not([disabled])',
+      'input:not([disabled]):not([type="hidden"])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(',');
+    const getFocusableElements = () => {
+      const elements = dialog?.querySelectorAll(focusableSelector);
+      const focusableElements: HTMLElement[] = [];
+      elements?.forEach((element) => {
+        if (element instanceof HTMLElement && element.getClientRects().length > 0) {
+          focusableElements.push(element);
+        }
+      });
+      return focusableElements;
+    };
+
+    (getFocusableElements()[0] ?? dialog)?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+
+      if (event.key !== 'Tab' || !dialog) return;
+
+      const focusableElements = getFocusableElements();
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const first = focusableElements[0];
+      const last = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && (activeElement === first || !dialog.contains(activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (activeElement === last || !dialog.contains(activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      if (previouslyFocused?.isConnected) previouslyFocused.focus();
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -56,34 +124,23 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target?.result as string;
-      if (!content) return;
+      if (!content?.trim()) {
+        setErrorMessage('O arquivo está vazio.');
+        return;
+      }
 
       if (isJson || content.trim().startsWith('{') || content.trim().startsWith('[')) {
         try {
-          const parsed = JSON.parse(content);
-          let txns: Transaction[] = [];
-          let parsedRules: Record<string, CategoryRule> = {};
-          let parsedSettings: Settings = { openingBalance: null, openingBalanceDate: null };
-
-          if (Array.isArray(parsed)) {
-            txns = parsed;
-          } else if (parsed && typeof parsed === 'object') {
-            if (Array.isArray(parsed.transactions)) txns = parsed.transactions;
-            if (parsed.rules && typeof parsed.rules === 'object') parsedRules = parsed.rules;
-            if (parsed.settings && typeof parsed.settings === 'object') parsedSettings = parsed.settings;
-          }
-
-          if (txns.length > 0 || Object.keys(parsedRules).length > 0) {
-            setJsonBackupPreview({
-              transactions: txns,
-              rules: parsedRules,
-              settings: parsedSettings,
-              fileName: file.name,
-            });
+          const validation = validateBackupPayload(JSON.parse(content));
+          if (!validation.data) {
+            setErrorMessage(validation.errors.join(' '));
             return;
           }
+          setJsonBackupPreview({ ...validation.data, fileName: file.name });
+          return;
         } catch (_) {
-          // not json, fallback to csv
+          setErrorMessage('Não foi possível ler o arquivo JSON. Verifique se ele está íntegro.');
+          return;
         }
       }
 
@@ -115,38 +172,26 @@ export const ImportModal: React.FC<ImportModalProps> = ({
     const trimmed = csvText.trim();
     if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
       try {
-        const parsed = JSON.parse(trimmed);
-        let txns: Transaction[] = [];
-        let parsedRules: Record<string, CategoryRule> = {};
-        let parsedSettings: Settings = { openingBalance: null, openingBalanceDate: null };
-
-        if (Array.isArray(parsed)) {
-          txns = parsed;
-        } else if (parsed && typeof parsed === 'object') {
-          if (Array.isArray(parsed.transactions)) txns = parsed.transactions;
-          if (parsed.rules && typeof parsed.rules === 'object') parsedRules = parsed.rules;
-          if (parsed.settings && typeof parsed.settings === 'object') parsedSettings = parsed.settings;
-        }
-
-        if (txns.length > 0 || Object.keys(parsedRules).length > 0) {
-          setJsonBackupPreview({
-            transactions: txns,
-            rules: parsedRules,
-            settings: parsedSettings,
-            fileName: 'texto_colado.json',
-          });
+        const validation = validateBackupPayload(JSON.parse(trimmed));
+        if (!validation.data) {
+          setErrorMessage(validation.errors.join(' '));
           return;
         }
+        setJsonBackupPreview({ ...validation.data, fileName: 'texto_colado.json' });
+        return;
       } catch (_) {
-        // continue as CSV
+        setErrorMessage('O texto parece JSON, mas não está bem formado.');
+        return;
       }
     }
 
     try {
       const result = onImportCSV(csvText);
       setLastResult(result);
-      if (result.totalParsed === 0 && result.errors.length > 0) {
-        setErrorMessage(result.errors.join(', '));
+      if (result.totalParsed === 0) {
+        setErrorMessage(result.errors.join(' ') || 'Nenhum lançamento válido foi encontrado no CSV.');
+      } else if (result.errors.length > 0) {
+        setErrorMessage(result.errors.join(' '));
       } else {
         setTimeout(() => {
           onClose();
@@ -192,9 +237,12 @@ export const ImportModal: React.FC<ImportModalProps> = ({
 
       {/* Modal Dialog */}
       <div
+        ref={dialogRef}
         className="relative w-full max-w-lg bg-[#FBF9F2] text-[#1E241F] rounded-2xl shadow-2xl border border-[#D6D0BC] overflow-hidden z-10 animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
+        aria-labelledby="import-dialog-title"
+        tabIndex={-1}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-[#D6D0BC]/80 bg-[#F5F2E7]">
@@ -202,7 +250,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({
             <span className="text-[11px] uppercase tracking-wider font-semibold text-[#63665C] block">
               Entrada de Dados
             </span>
-            <h3 className="font-receipt-display text-lg sm:text-xl font-bold text-[#1E241F] leading-tight">
+            <h3 id="import-dialog-title" className="font-receipt-display text-lg sm:text-xl font-bold text-[#1E241F] leading-tight">
               Importar Extrato Nubank ou Backup
             </h3>
           </div>
@@ -303,6 +351,12 @@ export const ImportModal: React.FC<ImportModalProps> = ({
                   </span>
                 )}
               </div>
+            </div>
+          )}
+
+          {lastResult && lastResult.newCount === 0 && lastResult.duplicateCount > 0 && !errorMessage && (
+            <div className="p-3 rounded-xl bg-[#1F6672]/10 border border-[#1F6672]/30 text-xs text-[#1F6672]">
+              {lastResult.duplicateCount} transação(ões) já estavam cadastradas; nenhum dado foi duplicado.
             </div>
           )}
 

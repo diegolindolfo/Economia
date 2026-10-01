@@ -35,6 +35,25 @@ import { SettingsModal } from './components/SettingsModal';
 import { FocusModeView } from './components/FocusModeView';
 import { ToastNotification, ToastData } from './components/ToastNotification';
 
+const SECONDARY_PAGE_INTRO: Record<Exclude<TabType, 'home'>, { title: string; description: string }> = {
+  statement: {
+    title: 'Extrato',
+    description: 'Pesquise e filtre seus lançamentos por período, categoria ou descrição.',
+  },
+  categories: {
+    title: 'Categorias',
+    description: 'Entenda como seus gastos se distribuem e compare os períodos.',
+  },
+  investments: {
+    title: 'Investimentos',
+    description: 'Acompanhe aportes e resgates do período selecionado.',
+  },
+  menu: {
+    title: 'Menu e ajustes',
+    description: 'Importação, saldo inicial, regras aprendidas e backups em um só lugar.',
+  },
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -49,6 +68,11 @@ export default function App() {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
   const [isFocusModeOpen, setIsFocusModeOpen] = useState<boolean>(false);
   const [toast, setToast] = useState<ToastData | null>(null);
+
+  const handleSelectTab = useCallback((tab: TabType) => {
+    setActiveTab(tab);
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, []);
 
   // Initialize data on mount
   useEffect(() => {
@@ -75,10 +99,8 @@ export default function App() {
       setTransactions(upgradedTxns);
       saveTransactions(upgradedTxns);
     } else {
-      // Zero-friction initial experience: load realistic sample data immediately
-      const result = parseNubankCSV(SAMPLE_NUBANK_CSV, [], savedRules);
-      setTransactions(result.transactions);
-      saveTransactions(result.transactions);
+      // Keep a clean first run; sample data remains available as an explicit action.
+      setTransactions([]);
     }
 
     // Global keyboard shortcut: press 'f' or 'z' to toggle special focus mode
@@ -133,7 +155,9 @@ export default function App() {
 
         setToast({
           id: String(Date.now()),
-          message: `${result.newCount} novas transações importadas com sucesso!`,
+          message: result.errors.length > 0
+            ? `${result.newCount} transações importadas; ${result.errors.length} linha(s) precisam de atenção.`
+            : `${result.newCount} novas transações importadas com sucesso!`,
           type: 'success',
         });
       } else if (result.duplicateCount > 0) {
@@ -316,11 +340,15 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#EDE8DC] text-[#141A15] flex flex-col font-sans selection:bg-[#D3CCA]">
+    <div className="min-h-screen bg-[#EDE8DC] text-[#141A15] flex flex-col font-sans selection:bg-[#D3CCAA]">
+      <a className="skip-link" href="#main-content">
+        Pular para o conteúdo principal
+      </a>
+
       {/* Top Header & Navigation */}
       <Navigation
         activeTab={activeTab}
-        onSelectTab={setActiveTab}
+        onSelectTab={handleSelectTab}
         transactionCount={transactions.length}
         rulesCount={Object.keys(rules).length}
         onOpenImportModal={() => setIsImportModalOpen(true)}
@@ -328,19 +356,29 @@ export default function App() {
       />
 
       {/* Main Container View (with padding bottom for mobile bar) */}
-      <main className="flex-1 w-full max-w-5xl mx-auto px-3.5 py-4 sm:px-6 sm:py-6 pb-20 md:pb-8">
+      <main id="main-content" tabIndex={-1} className="app-main flex-1 w-full max-w-5xl mx-auto px-3.5 py-4 sm:px-6 sm:py-6 pb-20 lg:pb-8">
+        {activeTab !== 'home' && (
+          <header className="mb-4 border-b border-[#D8D2C0] pb-3 sm:mb-5 sm:pb-4">
+            <h1 className="font-receipt-display text-2xl sm:text-3xl font-bold leading-tight tracking-tight text-[#141A15]">
+              {SECONDARY_PAGE_INTRO[activeTab].title}
+            </h1>
+            <p className="mt-1 text-sm sm:text-base leading-relaxed text-[#555C54]">
+              {SECONDARY_PAGE_INTRO[activeTab].description}
+            </p>
+          </header>
+        )}
+
         {activeTab === 'home' && (
           <HomeView
             transactions={transactions}
             settings={settings}
             selectedMonth={selectedMonth}
             onSelectMonth={setSelectedMonth}
-            onSelectTab={setActiveTab}
+            onSelectTab={handleSelectTab}
             onOpenCategorySheet={(txn) => setActiveSheetTxn(txn)}
             onOpenImportModal={() => setIsImportModalOpen(true)}
             onOpenSettingsModal={() => setIsSettingsModalOpen(true)}
             onLoadSample={handleLoadSample}
-            onOpenFocusMode={() => setIsFocusModeOpen(true)}
             onSelectCategory={setSelectedCategory}
           />
         )}

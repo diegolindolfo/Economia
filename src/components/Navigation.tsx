@@ -47,11 +47,12 @@ export const Navigation: React.FC<NavigationProps> = ({
     {
       id: 'investments' as TabType,
       label: 'Investimentos',
+      mobileLabel: 'Investir',
       icon: TrendingUp,
     },
     {
       id: 'menu' as TabType,
-      label: 'Importar / Menu',
+      label: 'Menu',
       icon: SlidersHorizontal,
     },
   ];
@@ -63,8 +64,10 @@ export const Navigation: React.FC<NavigationProps> = ({
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16">
             {/* App Brand */}
-            <div
-              className="flex items-center gap-2.5 cursor-pointer select-none"
+            <button
+              type="button"
+              aria-label="Ir para a página inicial"
+              className="flex items-center gap-2.5 cursor-pointer select-none text-left"
               onClick={() => onSelectTab('home')}
             >
               <div className="w-8 h-8 rounded-lg bg-[#FAF8F2] text-[#161C17] flex items-center justify-center font-receipt-display font-bold text-lg shadow-sm">
@@ -78,10 +81,10 @@ export const Navigation: React.FC<NavigationProps> = ({
                   Finanças Pessoais Nubank
                 </span>
               </div>
-            </div>
+            </button>
 
             {/* Desktop Navigation Tabs */}
-            <nav className="hidden md:flex items-center gap-1 bg-[#222A23] p-1 rounded-xl border border-[#344036]">
+            <nav aria-label="Navegação principal" className="hidden lg:flex items-center gap-1 bg-[#222A23] p-1 rounded-xl border border-[#344036]">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -90,6 +93,10 @@ export const Navigation: React.FC<NavigationProps> = ({
                     key={tab.id}
                     type="button"
                     onClick={() => onSelectTab(tab.id)}
+                    aria-current={isActive ? 'page' : undefined}
+                    aria-label={tab.id === 'statement' && transactionCount > 0
+                      ? `${tab.label}, ${transactionCount} lançamentos`
+                      : tab.label}
                     className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                       isActive
                         ? 'bg-[#FAF8F2] text-[#161C17] shadow-sm font-semibold'
@@ -100,6 +107,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                     <span>{tab.label}</span>
                     {tab.badge && (
                       <span
+                        aria-hidden="true"
                         className={`text-[11px] px-1.5 py-0.2 rounded-full font-mono ${
                           isActive
                             ? 'bg-[#E3DEC9] text-[#161C17]'
@@ -119,16 +127,18 @@ export const Navigation: React.FC<NavigationProps> = ({
               <button
                 type="button"
                 onClick={onOpenFocusMode}
+                aria-label="Abrir Modo Foco"
                 title="Ativar Modo Foco & Resumo Sem Distrações"
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#2E6B4F] hover:bg-[#255740] text-[#FAF8F2] font-semibold text-xs sm:text-sm shadow-sm transition-all cursor-pointer min-h-[40px] active:scale-95 border border-[#3E8061]"
               >
                 <Sparkles size={15} className="text-[#A7D7BC]" />
-                <span>Modo Foco</span>
+                <span className="hidden sm:inline">Modo Foco</span>
               </button>
 
               <button
                 type="button"
                 onClick={onOpenImportModal}
+                aria-label="Importar extrato CSV ou backup"
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#FAF8F2] hover:bg-[#EAE6D9] text-[#161C17] font-semibold text-xs sm:text-sm shadow-sm transition-all cursor-pointer min-h-[40px] active:scale-95"
               >
                 <UploadCloud size={16} />
@@ -141,8 +151,8 @@ export const Navigation: React.FC<NavigationProps> = ({
       </header>
 
       {/* Mobile Bottom Navigation Bar (Fixed for 1-thumb touch ease) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#161C17] border-t border-[#2C362E] pb-safe shadow-2xl">
-        <nav className="flex items-center justify-around h-16 px-1">
+      <div className="mobile-bottom-nav lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#161C17] border-t border-[#2C362E] shadow-2xl">
+        <nav aria-label="Navegação principal" className="flex items-center justify-around h-16 px-1">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -151,10 +161,15 @@ export const Navigation: React.FC<NavigationProps> = ({
                 key={tab.id}
                 type="button"
                 onClick={() => onSelectTab(tab.id)}
-                className={`flex flex-col items-center justify-center flex-1 h-full py-1 text-center transition-all cursor-pointer active:scale-95 ${
+                aria-current={isActive ? 'page' : undefined}
+                aria-label={tab.id === 'statement' && transactionCount > 0
+                  ? `${tab.label}, ${transactionCount} lançamentos`
+                  : tab.label}
+                className={`relative flex min-w-0 flex-col items-center justify-center flex-1 h-full py-1 text-center transition-all cursor-pointer active:scale-95 ${
                   isActive ? 'text-[#FAF8F2]' : 'text-[#8E998F] hover:text-[#C9C4B5]'
                 }`}
               >
+                {isActive && <span aria-hidden="true" className="absolute top-0 h-0.5 w-8 rounded-b bg-[#A8D1B0]" />}
                 <div
                   className={`p-1 rounded-lg transition-colors ${
                     isActive ? 'bg-[#2E3B30] text-[#FAF8F2]' : ''
@@ -163,11 +178,11 @@ export const Navigation: React.FC<NavigationProps> = ({
                   <Icon size={20} strokeWidth={isActive ? 2.3 : 1.8} />
                 </div>
                 <span
-                  className={`text-[11px] mt-0.5 tracking-tight font-medium leading-none ${
+                  className={`text-xs mt-0.5 tracking-tight font-medium leading-tight ${
                     isActive ? 'font-bold text-[#FAF8F2]' : ''
                   }`}
                 >
-                  {tab.id === 'menu' ? 'Menu' : tab.label}
+                  {'mobileLabel' in tab && tab.mobileLabel ? tab.mobileLabel : tab.label}
                 </span>
               </button>
             );
