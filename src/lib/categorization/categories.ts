@@ -19,6 +19,51 @@ export const CATEGORIES: Record<Category, CategoryInfo> = {
     iconName: 'Home',
     description: 'Aluguel, condomínio, luz, água, gás e IPTU'
   },
+  delivery: {
+    id: 'delivery',
+    label: 'Alimentação Delivery',
+    color: '#D97706',
+    bgColor: 'rgba(217, 119, 6, 0.12)',
+    borderColor: 'rgba(217, 119, 6, 0.28)',
+    iconName: 'Bike',
+    description: 'iFood, Rappi, restaurantes, lanchonetes e bares'
+  },
+  mercado: {
+    id: 'mercado',
+    label: 'Supermercado & Feira',
+    color: '#059669',
+    bgColor: 'rgba(5, 150, 105, 0.12)',
+    borderColor: 'rgba(5, 150, 105, 0.28)',
+    iconName: 'ShoppingCart',
+    description: 'Supermercados, feiras, padarias, hortifrútis e açougues'
+  },
+  transporte: {
+    id: 'transporte',
+    label: 'Transporte & Mobilidade',
+    color: '#0284C7',
+    bgColor: 'rgba(2, 132, 199, 0.12)',
+    borderColor: 'rgba(2, 132, 199, 0.28)',
+    iconName: 'Car',
+    description: 'Uber, 99, combustível, postos, pedágio, metrô e estacionamento'
+  },
+  lazer: {
+    id: 'lazer',
+    label: 'Lazer & Entretenimento',
+    color: '#E11D48',
+    bgColor: 'rgba(225, 29, 72, 0.12)',
+    borderColor: 'rgba(225, 29, 72, 0.28)',
+    iconName: 'Gamepad2',
+    description: 'Cinemas, shows, bares, eventos, passeios e jogos'
+  },
+  servicos: {
+    id: 'servicos',
+    label: 'Serviços Gerais',
+    color: '#7C3AED',
+    bgColor: 'rgba(124, 58, 237, 0.12)',
+    borderColor: 'rgba(124, 58, 237, 0.28)',
+    iconName: 'Wrench',
+    description: 'Manutenção, salão/barbearia, diarista, oficinas e reparos'
+  },
   educacao: {
     id: 'educacao',
     label: 'Educação',
@@ -37,57 +82,57 @@ export const CATEGORIES: Record<Category, CategoryInfo> = {
     iconName: 'TrendingUp',
     description: 'Aplicação/Resgate RDB, Caixinhas e Poupança'
   },
-  alimentacao: {
-    id: 'alimentacao',
-    label: 'Alimentação',
-    color: '#B96A28',
-    bgColor: 'rgba(185, 106, 40, 0.12)',
-    borderColor: 'rgba(185, 106, 40, 0.28)',
-    iconName: 'Utensils',
-    description: 'Restaurantes, delivery, supermercados e feiras'
-  },
   saude: {
     id: 'saude',
     label: 'Saúde',
-    color: '#AE3B2B',
-    bgColor: 'rgba(174, 59, 43, 0.12)',
-    borderColor: 'rgba(174, 59, 43, 0.28)',
+    color: '#DC2626',
+    bgColor: 'rgba(220, 38, 38, 0.12)',
+    borderColor: 'rgba(220, 38, 38, 0.28)',
     iconName: 'HeartPulse',
-    description: 'Farmácias, clínicas, hospitais e consultas'
+    description: 'Farmácias, clínicas, hospitais, consultas e academias'
   },
   compras: {
     id: 'compras',
     label: 'Compras',
-    color: '#6B4E85',
-    bgColor: 'rgba(107, 78, 133, 0.12)',
-    borderColor: 'rgba(107, 78, 133, 0.28)',
+    color: '#8B5CF6',
+    bgColor: 'rgba(139, 92, 246, 0.12)',
+    borderColor: 'rgba(139, 92, 246, 0.28)',
     iconName: 'ShoppingBag',
     description: 'E-commerce, vestuário, eletrônicos e presentes'
   },
   assinaturas: {
     id: 'assinaturas',
     label: 'Assinaturas & Contas',
-    color: '#2E5F8A',
-    bgColor: 'rgba(46, 95, 138, 0.12)',
-    borderColor: 'rgba(46, 95, 138, 0.28)',
+    color: '#2563EB',
+    bgColor: 'rgba(37, 99, 235, 0.12)',
+    borderColor: 'rgba(37, 99, 235, 0.28)',
     iconName: 'Tv',
     description: 'Streaming, internet, celular e serviços recorrentes'
+  },
+  alimentacao: {
+    id: 'alimentacao',
+    label: 'Alimentação Geral',
+    color: '#B96A28',
+    bgColor: 'rgba(185, 106, 40, 0.12)',
+    borderColor: 'rgba(185, 106, 40, 0.28)',
+    iconName: 'Utensils',
+    description: 'Refeições gerais e gastos alimentares'
   },
   transferencia: {
     id: 'transferencia',
     label: 'Transferências',
-    color: '#63665C',
-    bgColor: 'rgba(99, 102, 92, 0.12)',
-    borderColor: 'rgba(99, 102, 92, 0.28)',
+    color: '#64748B',
+    bgColor: 'rgba(100, 116, 139, 0.12)',
+    borderColor: 'rgba(100, 116, 139, 0.28)',
     iconName: 'ArrowUpRight',
     description: 'Pix para pessoas físicas e transferências entre contas'
   },
   outros: {
     id: 'outros',
     label: 'Outros',
-    color: '#7C7A68',
-    bgColor: 'rgba(124, 122, 104, 0.12)',
-    borderColor: 'rgba(124, 122, 104, 0.28)',
+    color: '#78716C',
+    bgColor: 'rgba(120, 113, 108, 0.12)',
+    borderColor: 'rgba(120, 113, 108, 0.28)',
     iconName: 'CircleEllipsis',
     description: 'Despesas diversas não classificadas'
   },
@@ -95,13 +140,18 @@ export const CATEGORIES: Record<Category, CategoryInfo> = {
 
 export const CATEGORY_LIST: CategoryInfo[] = [
   CATEGORIES.moradia,
-  CATEGORIES.alimentacao,
+  CATEGORIES.delivery,
+  CATEGORIES.mercado,
+  CATEGORIES.transporte,
+  CATEGORIES.lazer,
+  CATEGORIES.servicos,
   CATEGORIES.educacao,
+  CATEGORIES.saude,
   CATEGORIES.compras,
   CATEGORIES.assinaturas,
-  CATEGORIES.saude,
   CATEGORIES.investimento,
   CATEGORIES.transferencia,
+  CATEGORIES.alimentacao,
   CATEGORIES.receita,
   CATEGORIES.outros,
 ];

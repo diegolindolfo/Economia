@@ -40,6 +40,7 @@ interface ManageMenuViewProps {
   onUpdateRuleCategory: (merchantKey: string, newCategory: Category) => void;
   onLoadSample: () => void;
   onClearAllData: () => void;
+  onReprocessTransactions?: () => void;
 }
 
 export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
@@ -52,6 +53,7 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
   onUpdateRuleCategory,
   onLoadSample,
   onClearAllData,
+  onReprocessTransactions,
 }) => {
   // Tabs inside Menu: 'import' | 'settings' | 'rules' | 'backup'
   const [activeSection, setActiveSection] = useState<'import' | 'settings' | 'rules' | 'backup'>('import');
@@ -424,13 +426,27 @@ export const ManageMenuView: React.FC<ManageMenuViewProps> = ({
               </p>
             </div>
 
-            <input
-              type="text"
-              placeholder="Buscar estabelecimento..."
-              value={rulesSearch}
-              onChange={(e) => setRulesSearch(e.target.value)}
-              className="px-3 py-1.5 rounded-xl bg-[#F5F2E8] border border-[#D3CCA] text-xs text-[#141A15] focus:outline-none focus:ring-2 focus:ring-[#141A15]"
-            />
+            <div className="flex items-center gap-2 flex-wrap">
+              {onReprocessTransactions && transactions.length > 0 && (
+                <button
+                  type="button"
+                  onClick={onReprocessTransactions}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EDE8DC] hover:bg-[#E2DDCB] text-xs font-semibold text-[#141A15] border border-[#D8D2C0] transition-colors cursor-pointer"
+                  title="Reavalia todos os lançamentos com base nas regras e novas categorias aprendidas"
+                >
+                  <Sparkles size={13} className="text-[#1F6672]" />
+                  <span>Reclassificar Extrato</span>
+                </button>
+              )}
+
+              <input
+                type="text"
+                placeholder="Buscar estabelecimento..."
+                value={rulesSearch}
+                onChange={(e) => setRulesSearch(e.target.value)}
+                className="px-3 py-1.5 rounded-xl bg-[#F5F2E8] border border-[#D3CCA] text-xs text-[#141A15] focus:outline-none focus:ring-2 focus:ring-[#141A15]"
+              />
+            </div>
           </div>
 
           {rulesList.length === 0 ? (

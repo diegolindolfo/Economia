@@ -18,6 +18,7 @@ import {
 } from './lib/storage/localStorage';
 import { SAMPLE_NUBANK_CSV } from './data/sampleData';
 import { CATEGORIES } from './lib/categorization/categories';
+import { determineCategory } from './lib/categorization/rules';
 
 // Navigation & Views
 import { Navigation, TabType } from './components/Navigation';
@@ -59,7 +60,16 @@ export default function App() {
     setSettings(savedSettings);
 
     if (savedTxns.length > 0) {
-      setTransactions(savedTxns);
+      // Automatically upgrade heuristic transactions to new categories (delivery, mercado, transporte, etc.)
+      const upgradedTxns = savedTxns.map((t) => {
+        if (t.categorySource === 'heuristica') {
+          const { category, source } = determineCategory(t.merchantKey, t.desc, t.valor, savedRules);
+          return { ...t, category, source };
+        }
+        return t;
+      });
+      setTransactions(upgradedTxns);
+      saveTransactions(upgradedTxns);
     } else {
       // Zero-friction initial experience: load realistic sample data immediately
       const result = parseNubankCSV(SAMPLE_NUBANK_CSV, [], savedRules);
@@ -221,6 +231,20 @@ export default function App() {
     return transactions.filter((t) => t.merchantKey === activeSheetTxn.merchantKey).length;
   }, [activeSheetTxn, transactions]);
 
+  // Reprocess all transactions with current rules and updated heuristics
+  const handleReprocessTransactions = useCallback(() => {
+    const updated = transactions.map((t) => {
+      const { category, source } = determineCategory(t.merchantKey, t.desc, t.valor, rules);
+      return { ...t, category, source };
+    });
+    updateTransactions(updated);
+    setToast({
+      id: String(Date.now()),
+      message: `${updated.length} lançamentos reclassificados com sucesso com as novas categorias!`,
+      type: 'success',
+    });
+  }, [transactions, rules, updateTransactions]);
+
   // Clear data
   const handleClearAll = useCallback(() => {
     clearAllData();
@@ -306,6 +330,7 @@ export default function App() {
             onUpdateRuleCategory={handleUpdateRuleCategory}
             onLoadSample={handleLoadSample}
             onClearAllData={handleClearAll}
+            onReprocessTransactions={handleReprocessTransactions}
           />
         )}
       </main>

@@ -483,10 +483,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
             >
               <div className="min-w-0">
                 <span className="block font-semibold text-xs text-[#141A15] truncate">
-                  10 Categorias & Metas
+                  15 Categorias & Metas
                 </span>
                 <span className="text-[10px] text-[#636A60] block truncate">
-                  Moradia, Educação, etc.
+                  Delivery, Mercado, Transporte...
                 </span>
               </div>
               <ChevronRight size={14} className="text-[#888E84] group-hover:translate-x-0.5 transition-transform shrink-0" />

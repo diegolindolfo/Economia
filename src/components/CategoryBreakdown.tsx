@@ -27,22 +27,22 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({
 
   // Aggregate expenses by category (excluding pure receitas, but can show all or expenses)
   const { categoryStats, totalExpenses } = useMemo(() => {
-    const stats: Record<Category, { total: number; count: number }> = {
-      moradia: { total: 0, count: 0 },
-      educacao: { total: 0, count: 0 },
-      alimentacao: { total: 0, count: 0 },
-      compras: { total: 0, count: 0 },
-      assinaturas: { total: 0, count: 0 },
-      saude: { total: 0, count: 0 },
-      investimento: { total: 0, count: 0 },
-      transferencia: { total: 0, count: 0 },
-      outros: { total: 0, count: 0 },
-      receita: { total: 0, count: 0 },
-    };
+    const stats: Record<Category, { total: number; count: number }> = {} as Record<
+      Category,
+      { total: number; count: number }
+    >;
+
+    CATEGORY_LIST.forEach((c) => {
+      stats[c.id] = { total: 0, count: 0 };
+    });
 
     let totalExp = 0;
 
     monthlyTransactions.forEach((t) => {
+      if (!stats[t.category]) {
+        stats[t.category] = { total: 0, count: 0 };
+      }
+
       if (t.category === 'receita') {
         stats.receita.total += t.valor;
         stats.receita.count++;

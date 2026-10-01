@@ -10,6 +10,11 @@ import {
   CircleEllipsis,
   Home,
   GraduationCap,
+  Bike,
+  ShoppingCart,
+  Car,
+  Gamepad2,
+  Wrench,
 } from 'lucide-react';
 import { Category, CategorySource } from '../types';
 import { CATEGORIES } from '../lib/categorization/categories';
@@ -36,6 +41,16 @@ export const CategoryIcon: React.FC<{ category: Category; size?: number; classNa
       return <TrendingUp size={size} className={className} />;
     case 'moradia':
       return <Home size={size} className={className} />;
+    case 'delivery':
+      return <Bike size={size} className={className} />;
+    case 'mercado':
+      return <ShoppingCart size={size} className={className} />;
+    case 'transporte':
+      return <Car size={size} className={className} />;
+    case 'lazer':
+      return <Gamepad2 size={size} className={className} />;
+    case 'servicos':
+      return <Wrench size={size} className={className} />;
     case 'educacao':
       return <GraduationCap size={size} className={className} />;
     case 'alimentacao':
